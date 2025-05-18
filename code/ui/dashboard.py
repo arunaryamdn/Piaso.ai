@@ -1,6 +1,6 @@
+import streamlit as st
 from io import BytesIO
 import pandas as pd
-import streamlit as st
 import logging
 
 def show_summary_cards(df):

@@ -1,3 +1,8 @@
+import streamlit as st
+import pandas as pd
+import plotly.express as px
+import logging
+
 def ai_recommendations(df):
     st.subheader('🤖 Advanced AI Stock Recommendations')
     st.info('These recommendations use your portfolio, real-time prices, and simulated financial/market data. For real investment decisions, always consult a financial advisor.')
