@@ -9,11 +9,15 @@ from ui.sector_analysis import show_sector_distribution
 from ui.realtime_prices import show_realtime_prices
 from ui.logs import show_logs
 from ui.ai_recommendations import ai_recommendations
+from ui.news import show_news
 
 st.set_page_config(page_title='Stock Market Analyzer', layout='wide')
 
 st.sidebar.title('Navigation')
-page = st.sidebar.radio('Go to', ['Dashboard', 'Portfolio Table', 'Sector Analysis', 'Real-Time Prices', 'AI Recommendations', 'Logs'])
+page = st.sidebar.radio(
+    'Go to',
+    ['Dashboard', 'Portfolio Table', 'Sector Analysis', 'Real-Time Prices', 'AI Recommendations', 'Logs', 'News']
+)
 
 st.title('📊 Indian Stock Market Analyzer')
 
@@ -32,6 +36,8 @@ def main():
             show_logs()
         elif page == 'AI Recommendations':
             ai_recommendations(df)
+        elif page == 'News':
+            show_news(df)
         else:
             st.info('Select a page from the sidebar.')
     else:
