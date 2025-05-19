@@ -10,11 +10,11 @@ def ai_recommendations(df):
     recs = []
     import random
     for idx, row in df.iterrows():
-        symbol = row['Symbol']
-        avg_price = row['Average Price']
-        qty = row['Quantity Available']
-        prev_close = row['Previous Closing Price']
-        unrealized_pnl = row['Unrealized P&L']
+        symbol = row['Ticker']
+        avg_price = row['Avg_Price']
+        qty = row['Quantity']
+        prev_close = row['Current_Price']
+        unrealized_pnl = row['P/L']
         sector = row.get('Sector', 'Unknown')
         revenue_growth = random.uniform(-10, 25)  # %
         profit_margin = random.uniform(-5, 30)    # %
@@ -25,7 +25,7 @@ def ai_recommendations(df):
         sector_pe = 25 if sector.lower() in ['it', 'pharma', 'auto', 'banking'] else 18
         news_sentiment = random.choice(['Positive', 'Neutral', 'Negative'])
         holding_period = random.randint(2, 48)
-        concentration = 'High' if qty > df['Quantity Available'].mean() * 2 else 'Normal'
+        concentration = 'High' if qty > df['Quantity'].mean() * 2 else 'Normal'
         try:
             ticker = yf.Ticker(symbol + ".NS")
             live_price = ticker.history(period='1d').iloc[-1]['Close']

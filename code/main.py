@@ -19,7 +19,6 @@ from ui.dashboard import show_dashboard_page
 from ui.portfolio_table import show_portfolio_table_page
 from ui.sector_analysis import show_sector_analysis_page
 from ui.realtime_prices import show_realtime_prices_page
-from ui.logs import show_logs_page
 from ui.ai_recommendations import show_ai_recommendations_page
 from ui.news import show_news_page
 
@@ -76,7 +75,7 @@ def main():
     st.sidebar.title('Navigation')
     page = st.sidebar.radio(
         'Go to',
-        ['📊 Dashboard', '📋 Portfolio Table', '📈 Sector Analysis', '💹 Real-Time Prices', '🤖 AI Recommendations', '📝 Logs', '📰 News']
+        ['📊 Dashboard', '📋 Portfolio Table', '📈 Sector Analysis', '💹 Real-Time Prices', '🤖 AI Recommendations', '📰 News']
     )
     # Remove icons from page name for processing
     page = page.split(' ', 1)[1]
@@ -93,8 +92,6 @@ def main():
             show_sector_analysis_page(df)
         elif page == 'Real-Time Prices':
             show_realtime_prices_page(df)
-        elif page == 'Logs':
-            show_logs_page()
         elif page == 'AI Recommendations':
             show_ai_recommendations_page(df)
         elif page == 'News':

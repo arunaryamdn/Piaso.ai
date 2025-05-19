@@ -14,7 +14,7 @@ def show_portfolio_table(df):
     def highlight_pnl(val):
         color = 'green' if val > 0 else 'red' if val < 0 else 'black'
         return f'color: {color}'
-    st.dataframe(filtered.style.applymap(highlight_pnl, subset=['Unrealized P&L']))
+    st.dataframe(filtered.style.applymap(highlight_pnl, subset=['P/L']))
     st.download_button('Download Portfolio as Excel', to_excel(filtered), file_name='portfolio.xlsx')
     logging.info('Displayed portfolio table.')
 

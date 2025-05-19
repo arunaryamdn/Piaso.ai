@@ -9,8 +9,8 @@ def show_realtime_prices(df):
     failed = []
     prices_data = []
     for idx, row in df.iterrows():
-        symbol = row['Symbol']
-        avg_price = row['Average Price']
+        symbol = row['Ticker']
+        avg_price = row['Avg_Price']
         try:
             ticker = yf.Ticker(str(symbol) + ".NS")
             live_price = ticker.history(period='1d').iloc[-1]['Close']
