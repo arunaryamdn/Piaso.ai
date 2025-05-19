@@ -9,3 +9,6 @@ def show_sector_distribution(df):
     fig = px.pie(sector_dist, values='Quantity Available', names='Sector', title='Portfolio Sector Distribution')
     st.plotly_chart(fig)
     logging.info('Sector distribution chart displayed.')
+
+def show_sector_analysis_page(df):
+    show_sector_distribution(df)

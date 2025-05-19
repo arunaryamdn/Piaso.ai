@@ -94,3 +94,6 @@ def ai_recommendations(df):
         })
     recs_df = pd.DataFrame(recs)
     st.dataframe(recs_df, use_container_width=True, hide_index=True)
+
+def show_ai_recommendations_page(df):
+    ai_recommendations(df)

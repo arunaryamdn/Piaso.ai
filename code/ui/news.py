@@ -35,3 +35,6 @@ def show_news(df):
                 st.write("---")
         else:
             st.write("No recent news found.")
+
+def show_news_page(df):
+    show_news(df)

@@ -57,3 +57,6 @@ def show_realtime_prices(df):
         with st.expander('Show Failed Ticker Fetches'):
             st.write('The following tickers could not be fetched (may be delisted or incorrect):')
             st.write(', '.join(map(str, failed)))
+
+def show_realtime_prices_page(df):
+    show_realtime_prices(df)

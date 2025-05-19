@@ -17,3 +17,6 @@ def show_portfolio_table(df):
     st.dataframe(filtered.style.applymap(highlight_pnl, subset=['Unrealized P&L']))
     st.download_button('Download Portfolio as Excel', to_excel(filtered), file_name='portfolio.xlsx')
     logging.info('Displayed portfolio table.')
+
+def show_portfolio_table_page(df):
+    show_portfolio_table(df)

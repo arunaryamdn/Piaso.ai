@@ -8,3 +8,6 @@ def show_logs():
             st.code(''.join(lines))
     except Exception as e:
         st.error(f'Could not read log file: {e}')
+
+def show_logs_page():
+    show_logs()
