@@ -38,6 +38,11 @@ Features
    - Portfolio template download
    - Real-time data updates
 
+5. Comparative Performance Charts
+   - Compare multiple stocks or indices on a single interactive chart
+   - Supports normalized, raw price, and percent change modes
+   - User controls for symbol selection, date range, and chart mode
+
 Setup Instructions
 -----------------
 1. Create a virtual environment:
@@ -97,6 +102,7 @@ Dependencies
 - beautifulsoup4>=4.12.0
 - nsepython>=1.0.0
 - nsetools>=1.0.11
+- altair>=5.0.0
 
 Known Issues
 -----------

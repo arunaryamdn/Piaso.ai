@@ -2,6 +2,11 @@ import streamlit as st
 import pandas as pd
 import yfinance as yf
 import logging
+from curl_cffi import requests
+from nsepython import nsefetch
+from utils.nse_node_api import get_nse_quote
+
+session = requests.Session(impersonate="chrome")
 
 def show_realtime_prices(df):
     st.subheader('📈 Real-Time Stock Prices')
@@ -12,9 +17,29 @@ def show_realtime_prices(df):
         symbol = row['Ticker']
         avg_price = row['Avg_Price']
         try:
-            ticker = yf.Ticker(str(symbol) + ".NS")
-            live_price = ticker.history(period='1d').iloc[-1]['Close']
-            live_price_str = f"{live_price:,.2f}"
+            # 1. Try Node.js API
+            nse_symbol = symbol.replace('.NS', '')
+            nse_data = get_nse_quote(nse_symbol)
+            if nse_data and 'priceInfo' in nse_data:
+                live_price = float(nse_data['priceInfo']['lastPrice'])
+                live_price_str = f"{live_price:,.2f}"
+            else:
+                # 2. Fallback to yfinance
+                try:
+                    ticker = yf.Ticker(symbol, session=session)
+                    live_price = ticker.history(period='1d').iloc[-1]['Close']
+                    live_price_str = f"{live_price:,.2f}"
+                except Exception:
+                    # 3. Fallback to nsepython
+                    try:
+                        nse_url = f"https://www.nseindia.com/api/quote-equity?symbol={nse_symbol}"
+                        nse_data = nsefetch(nse_url)
+                        live_price = float(nse_data['priceInfo']['lastPrice'])
+                        live_price_str = f"{live_price:,.2f}"
+                    except Exception:
+                        failed.append(symbol)
+                        live_price = None
+                        live_price_str = 'N/A'
         except Exception as e:
             failed.append(symbol)
             live_price = None

@@ -3,12 +3,14 @@ import pandas as pd
 import plotly.express as px
 import logging
 import yfinance as yf
+from curl_cffi import requests
 
 def ai_recommendations(df):
     st.subheader('🤖 Advanced AI Stock Recommendations')
     st.info('These recommendations use your portfolio, real-time prices, and simulated financial/market data. For real investment decisions, always consult a financial advisor.')
     recs = []
     import random
+    session = requests.Session(impersonate="chrome")
     for idx, row in df.iterrows():
         symbol = row['Ticker']
         avg_price = row['Avg_Price']
@@ -27,7 +29,7 @@ def ai_recommendations(df):
         holding_period = random.randint(2, 48)
         concentration = 'High' if qty > df['Quantity'].mean() * 2 else 'Normal'
         try:
-            ticker = yf.Ticker(symbol + ".NS")
+            ticker = yf.Ticker(symbol, session=session)
             live_price = ticker.history(period='1d').iloc[-1]['Close']
         except Exception:
             live_price = prev_close
