@@ -66,9 +66,9 @@ def show_summary_cards(df):
     # Force reset index to ensure uniqueness
     df = df.reset_index(drop=True)
     # Diagnostic: Check for duplicate index labels
-    index_counts = pd.Series(df.index).value_counts()
-    print('DataFrame index counts:', index_counts.to_dict())
-    st.write('**[DEBUG] DataFrame index counts:**', index_counts.to_dict())
+    # index_counts = pd.Series(df.index).value_counts()
+    # print('DataFrame index counts:', index_counts.to_dict())
+    # st.write('**[DEBUG] DataFrame index counts:**', index_counts.to_dict())
 
     logging.info(f'Metrics calculated: Value={total_value}, P&L={total_pl}, Pct={pl_percent}')
 

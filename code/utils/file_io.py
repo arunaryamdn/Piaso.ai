@@ -94,9 +94,9 @@ def upload_portfolio():
         # Add 'Stock' column for dashboard plotting
         df['Stock'] = df['Ticker'] if 'Ticker' in df.columns else df['Symbol']
         # Diagnostic: Show column names and their counts
-        col_counts = pd.Series(df.columns).value_counts()
-        print('DataFrame columns and counts:', col_counts.to_dict())
-        st.write('**[DEBUG] DataFrame columns and counts:**', col_counts.to_dict())
+        # col_counts = pd.Series(df.columns).value_counts()
+        # print('DataFrame columns and counts:', col_counts.to_dict())
+        # st.write('**[DEBUG] DataFrame columns and counts:**', col_counts.to_dict())
         st.success("✅ Excel file loaded successfully!")
         return df
     except Exception as e:
