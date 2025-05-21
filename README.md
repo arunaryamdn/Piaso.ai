@@ -1,4 +1,4 @@
-# Indian Stock Market Analyzer
+# Paiso.ai
 
 A modern, modular web application for analyzing Indian stock market portfolios. Built with a FastAPI backend, React frontend, and optional Streamlit UI for rapid prototyping.
 

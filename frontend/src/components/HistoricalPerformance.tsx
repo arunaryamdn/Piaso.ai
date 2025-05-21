@@ -16,7 +16,7 @@ const HistoricalPerformance: React.FC = () => {
 
   if (loading) return <div>Loading historical performance...</div>;
   if (error) return <div>Error: {error}</div>;
-  if (!data.length) return <div>No historical data available.</div>;
+  if (!data || !Array.isArray(data) || !data.length) return <div>No historical data available.</div>;
 
   return (
     <div>

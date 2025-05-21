@@ -1,0 +1,166 @@
+/* PortfolioTable.css - Modern dark theme, matches Stitch Designs */
+
+.portfolio-root {
+    background: #162013;
+    color: #fff;
+    min-height: 100vh;
+    padding: 0;
+    font-family: 'Manrope', 'Noto Sans', Arial, sans-serif;
+}
+
+.portfolio-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 2rem 2.5rem 1.5rem 2.5rem;
+    border-bottom: 1px solid #2e4328;
+    background: #162013;
+}
+
+.portfolio-logo-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.portfolio-logo-row h2 {
+    color: #53d22c;
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin: 0;
+}
+
+.portfolio-nav {
+    display: flex;
+    gap: 2rem;
+}
+
+.portfolio-nav a {
+    color: #b5cbb0;
+    font-weight: 500;
+    font-size: 1rem;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.portfolio-nav a.active,
+.portfolio-nav a:hover {
+    color: #53d22c;
+}
+
+.portfolio-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.portfolio-search-label {
+    display: flex;
+    align-items: center;
+    background: #222e1c;
+    border-radius: 8px;
+    padding: 0 0.5rem;
+}
+
+.portfolio-search-icon {
+    color: #a2c398;
+    margin-right: 0.5rem;
+}
+
+.portfolio-search-input {
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 1rem;
+    padding: 0.5rem 0;
+    outline: none;
+    width: 180px;
+}
+
+.portfolio-table-section {
+    max-width: 1200px;
+    margin: 2rem auto;
+    background: #1a2615;
+    border-radius: 1rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    padding: 2rem;
+}
+
+.portfolio-table-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+}
+
+.portfolio-table-title-row h1 {
+    color: #fff;
+    font-size: 2rem;
+    font-weight: bold;
+    margin: 0;
+}
+
+.portfolio-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #21301c;
+    border-radius: 1rem;
+    overflow: hidden;
+}
+
+.portfolio-table th,
+.portfolio-table td {
+    padding: 1rem 1.5rem;
+    text-align: left;
+}
+
+.portfolio-table th {
+    background: #2a3b26;
+    color: #b5cbb0;
+    font-size: 0.95rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.portfolio-table tr {
+    border-bottom: 1px solid #2e4328;
+}
+
+.portfolio-table td {
+    color: #fff;
+    font-size: 1rem;
+}
+
+.portfolio-table td.positive {
+    color: #53d22c;
+}
+
+.portfolio-table td.negative {
+    color: #ff4d4f;
+}
+
+.portfolio-logo {
+    height: 32px;
+    width: 32px;
+    object-fit: contain;
+    margin-right: 0.5rem;
+}
+
+@media (max-width: 900px) {
+    .portfolio-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+        padding: 1rem;
+    }
+
+    .portfolio-table-section {
+        padding: 1rem;
+    }
+
+    .portfolio-table th,
+    .portfolio-table td {
+        padding: 0.5rem 0.5rem;
+        font-size: 0.95rem;
+    }
+}

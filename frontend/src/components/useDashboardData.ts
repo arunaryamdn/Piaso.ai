@@ -9,6 +9,9 @@ export interface DashboardMetrics {
   num_stocks: number;
   profit_stocks: number;
   loss_stocks: number;
+  chart_data?: any[]; // Add chart_data property
+  asset_allocation?: Record<string, number>; // Add asset_allocation property
+  holdings?: any[]; // Add holdings property
   // ...add more fields as needed
 }
 

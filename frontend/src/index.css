@@ -1,6 +1,6 @@
 body {
-  background-color: #f5f5f5;
-  color: #333;
+  background-color: #181c24;
+  color: #e0e6ef;
   font-family: 'Segoe UI', Arial, sans-serif;
   margin: 0;
   padding: 0;
@@ -9,21 +9,35 @@ body {
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
 
-h1 {
-  color: #1976d2;
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: #7ecbff;
   margin-top: 0;
+}
+
+a {
+  color: #7ecbff;
+  text-decoration: none;
+}
+
+a:hover {
+  color: #fff;
+  text-decoration: underline;
 }
 
 nav a {
   text-decoration: none;
-  color: #1976d2;
+  color: #7ecbff;
   font-weight: 500;
 }
 
 nav a:hover {
-  color: #424242;
+  color: #fff;
 }

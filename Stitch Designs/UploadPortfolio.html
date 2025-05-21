@@ -1,0 +1,93 @@
+<html><head>
+<meta charset="utf-8"/>
+<link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect"/>
+<link as="style" href="https://fonts.googleapis.com/css2?display=swap&amp;family=Manrope%3Awght%40400%3B500%3B700%3B800&amp;family=Noto+Sans%3Awght%40400%3B500%3B700%3B900" onload="this.rel='stylesheet'" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+<title>Stitch Design</title>
+<link href="data:image/x-icon;base64," rel="icon" type="image/x-icon"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+</head>
+<body class="bg-[#162013]">
+<div class="relative flex size-full min-h-screen flex-col dark group/design-root overflow-x-hidden" style='font-family: Manrope, "Noto Sans", sans-serif;'>
+<div class="layout-container flex h-full grow flex-col">
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#2e4328] px-10 py-4">
+<div class="flex items-center gap-3 text-white">
+<div class="size-6">
+<svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M12.0799 24L4 19.2479L9.95537 8.75216L18.04 13.4961L18.0446 4H29.9554L29.96 13.4961L38.0446 8.75216L44 19.2479L35.92 24L44 28.7521L38.0446 39.2479L29.96 34.5039L29.9554 44H18.0446L18.04 34.5039L9.95537 39.2479L4 28.7521L12.0799 24Z" fill="currentColor" fill-rule="evenodd"></path>
+</svg>
+</div>
+<h2 class="text-white text-xl font-bold leading-tight tracking-[-0.015em]">Stock Insights</h2>
+</div>
+<nav class="flex items-center gap-8">
+<a class="text-[#A2C398] hover:text-white text-sm font-medium leading-normal transition-colors" href="#">Dashboard</a>
+<a class="text-white text-sm font-medium leading-normal border-b-2 border-[#53D22C] pb-1" href="#">Portfolio</a>
+<a class="text-[#A2C398] hover:text-white text-sm font-medium leading-normal transition-colors" href="#">Analytics</a>
+<a class="text-[#A2C398] hover:text-white text-sm font-medium leading-normal transition-colors" href="#">Research</a>
+<a class="text-[#A2C398] hover:text-white text-sm font-medium leading-normal transition-colors" href="#">Community</a>
+</nav>
+<div class="flex items-center gap-4">
+<button class="flex items-center justify-center rounded-full h-10 w-10 bg-[#2e4328] text-white hover:bg-[#426039] transition-colors">
+<span class="material-icons text-xl">notifications</span>
+</button>
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 border-2 border-[#53D22C]" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDcYHxyZ5NBTNOJEkTNUnprC7ep8IaX_QnGu2cRq3sEDCjGEJq-Y3-sgqKlQP_5NHJKl_URhseNbgUpjvUpxMx09_Pv7CO_hDmuzFlQzAftDHVOXfaLyBwd7XRklvuxLqx45fdubG0kiKv2EEOdsOxYJF1fqKfMgE35BedN8qkidYwCzABwh87NdmhT_Y_UNY1RU7sWeG-nrMtO5QJTT7gRS0co_jjRCGtiDanVtHIZl53o3wGLAPGtCFzG4V8KM9xOs6l6G8xZsu0m");'></div>
+</div>
+</header>
+<main class="px-10 md:px-20 lg:px-40 flex flex-1 justify-center py-8">
+<div class="layout-content-container flex flex-col max-w-3xl w-full">
+<header class="mb-8">
+<h1 class="text-white text-4xl font-bold leading-tight tracking-tight mb-2">Upload Portfolio Data</h1>
+<p class="text-[#A2C398] text-base font-normal leading-normal">
+                Upload your portfolio data from an Excel file to analyze your investments. Ensure your file is in the correct format as described below.
+              </p>
+</header>
+<section class="mb-8 bg-[#1F2C1A] p-6 rounded-lg shadow-lg">
+<h3 class="text-white text-xl font-semibold leading-tight tracking-[-0.015em] mb-3">Required Excel Format</h3>
+<p class="text-[#A2C398] text-sm font-normal leading-normal mb-4">
+                Your Excel file should contain the following columns in this specific order: <br/>
+<strong class="text-white">Stock Symbol, Quantity, Average Price, Date of Purchase</strong>. <br/>
+                The first row must be the header row with these exact column names.
+              </p>
+<a class="text-[#53D22C] hover:text-[#70e048] text-sm font-medium underline flex items-center gap-1" href="#">
+<span class="material-icons text-base">download</span>
+                Download Sample Excel File
+              </a>
+</section>
+<section class="mb-8">
+<div class="flex flex-col items-center gap-6 rounded-xl border-2 border-dashed border-[#426039] px-6 py-12 bg-[#1F2C1A] hover:border-[#53D22C] transition-colors cursor-pointer group">
+<span class="material-icons text-5xl text-[#53D22C] group-hover:text-[#70e048] transition-colors">upload_file</span>
+<div class="flex flex-col items-center gap-1">
+<p class="text-white text-lg font-bold leading-tight tracking-[-0.015em]">Drag and drop your Excel file here, or</p>
+<label class="text-[#53D22C] hover:text-[#70e048] text-sm font-medium leading-normal cursor-pointer underline" for="file-upload">
+                    Browse Files
+                  </label>
+<input accept=".xlsx, .xls" class="hidden" id="file-upload" type="file"/>
+</div>
+<p class="text-[#A2C398] text-xs font-normal leading-normal mt-2">Supported file types: .xlsx, .xls. Max file size: 5MB.</p>
+</div>
+</section>
+<section class="mb-8 bg-[#1F2C1A] p-6 rounded-lg shadow-lg">
+<h3 class="text-white text-xl font-semibold leading-tight tracking-[-0.015em] mb-3">Upload Status</h3>
+<div class="status-message mb-4">
+<p class="text-[#A2C398] text-sm font-normal leading-normal">No file uploaded yet. Please select a file to upload your portfolio data.</p>
+</div>
+<div class="flex items-center gap-4 mb-1">
+<p class="text-white text-sm font-medium leading-normal flex-1">Upload Progress</p>
+<p class="text-[#A2C398] text-xs font-normal leading-normal">0%</p>
+</div>
+<div class="rounded-full bg-[#426039] h-2.5 w-full">
+<div class="h-2.5 rounded-full bg-[#53D22C]" style="width: 0%;"></div>
+</div>
+</section>
+<div class="flex justify-end mt-4">
+<button class="flex items-center justify-center gap-2 min-w-[180px] max-w-[480px] cursor-pointer overflow-hidden rounded-full h-12 px-6 bg-[#53D22C] text-[#162013] text-base font-bold leading-normal tracking-[0.015em] hover:bg-[#70e048] transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled="">
+<span class="material-icons text-xl">insights</span>
+<span class="truncate">Analyze Portfolio</span>
+</button>
+</div>
+</div>
+</main>
+</div>
+</div>
+
+</body></html>

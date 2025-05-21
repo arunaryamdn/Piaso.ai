@@ -3,30 +3,46 @@ import numpy as np
 from datetime import datetime, timedelta
 import yfinance as yf
 import requests
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
 
 def calculate_portfolio_metrics(df: pd.DataFrame) -> dict:
+    logging.debug(f"Calculating portfolio metrics for DataFrame with columns: {df.columns.tolist()} and shape: {df.shape}")
+    # Normalize all column names to lowercase
+    df.columns = [col.strip().lower() for col in df.columns]
     # Ensure required columns exist
-    for col in ['Quantity', 'Avg_Price', 'Current_Price']:
+    for col in ['quantity available', 'average price', 'live_price', 'ticker']:
         if col not in df:
             df[col] = 0
     # Calculate investment, value, P/L
-    df['Investment'] = df['Quantity'] * df['Avg_Price']
-    df['Current_Value'] = df['Quantity'] * df['Current_Price']
-    df['P_L'] = df['Current_Value'] - df['Investment']
-    df['P_L_Percent'] = (df['P_L'] / df['Investment']) * 100
+    df['investment'] = df['quantity available'] * df['average price']
+    # Use live_price if available, else previous closing price
+    if 'live_price' in df.columns and df['live_price'].notnull().any():
+        df['current_value'] = df['quantity available'] * df['live_price']
+        df['current_price'] = df['live_price']
+    else:
+        df['current_value'] = df['quantity available'] * df['previous closing price']
+        df['current_price'] = df['previous closing price']
+    df['p_l'] = df['current_value'] - df['investment']
+    df['p_l_percent'] = (df['p_l'] / df['investment']) * 100
     # Portfolio metrics
-    total_investment = df['Investment'].sum()
-    total_value = df['Current_Value'].sum()
-    total_pl = df['P_L'].sum()
+    total_investment = df['investment'].sum()
+    total_value = df['current_value'].sum()
+    total_pl = df['p_l'].sum()
     pl_percent = (total_pl / total_investment * 100) if total_investment > 0 else 0
     num_stocks = len(df)
-    profit_stocks = len(df[df['P_L'] > 0])
-    loss_stocks = len(df[df['P_L'] < 0])
+    profit_stocks = len(df[df['p_l'] > 0])
+    loss_stocks = len(df[df['p_l'] < 0])
     # Top performers/losers
-    top_performers = df.nlargest(3, 'P_L_Percent')[['Ticker', 'P_L_Percent']].rename(columns={'Ticker': 'Stock'})
-    top_losers = df.nsmallest(3, 'P_L_Percent')[['Ticker', 'P_L_Percent']].rename(columns={'Ticker': 'Stock'})
+    top_performers = df.nlargest(3, 'p_l_percent')[['ticker', 'p_l_percent']].rename(columns={'ticker': 'Stock', 'p_l_percent': 'P_L_Percent'})
+    top_losers = df.nsmallest(3, 'p_l_percent')[['ticker', 'p_l_percent']].rename(columns={'ticker': 'Stock', 'p_l_percent': 'P_L_Percent'})
     # Portfolio distribution
-    distribution = df[['Ticker', 'Current_Value']].rename(columns={'Ticker': 'Stock'})
+    distribution = df[['ticker', 'current_value']].rename(columns={'ticker': 'Stock', 'current_value': 'Current_Value'})
+    # Replace NaN and inf with None for JSON compliance
+    top_performers = top_performers.replace([np.inf, -np.inf, np.nan], None)
+    top_losers = top_losers.replace([np.inf, -np.inf, np.nan], None)
+    distribution = distribution.replace([np.inf, -np.inf, np.nan], None)
     return {
         'metrics': {
             'total_investment': float(total_investment),
@@ -43,27 +59,40 @@ def calculate_portfolio_metrics(df: pd.DataFrame) -> dict:
     }
 
 def fetch_realtime_prices(df: pd.DataFrame) -> pd.DataFrame:
+    logging.debug(f"Fetching realtime prices for DataFrame with columns: {df.columns.tolist()} and shape: {df.shape}")
     df = df.copy()
+    # Normalize column names: lowercase and strip spaces
+    df.columns = [col.strip().lower() for col in df.columns]
+    logging.debug(f"Columns after normalization: {df.columns.tolist()}")
+    if 'ticker' not in df.columns and 'symbol' in df.columns:
+        df = df.rename(columns={'symbol': 'ticker'})
+        logging.debug(f"Columns after renaming symbol to ticker: {df.columns.tolist()}")
+    # Ensure required columns exist
+    for col in ['ticker', 'quantity', 'avg_price']:
+        if col not in df.columns:
+            df[col] = 0
     prices = []
     for _, row in df.iterrows():
-        ticker = row.get('Ticker')
-        avg_price = row.get('Avg_Price', 0)
+        ticker = row.get('ticker')
+        logging.debug(f"Processing ticker: {ticker}")
+        avg_price = row.get('avg_price', 0)
         live_price = None
         status = 'N/A'
         if not ticker:
-            prices.append({'Symbol': None, 'Live_Price': None, 'Avg_Price': avg_price, 'Status': 'N/A', 'Source': 'None'})
+            prices.append({'Ticker': None, 'Live_Price': None, 'Avg_Price': avg_price, 'Status': 'N/A', 'Source': 'None'})
             continue
-        # 1. Try stock-nse-india Node.js API
+        # 1. Try Node.js API
         try:
             symbol = ticker.replace('.NS', '') if isinstance(ticker, str) and ticker.endswith('.NS') else ticker
-            resp = requests.get(f'http://localhost:3000/api/quote-equity?symbol={symbol}', timeout=10)
+            resp = requests.get(f'http://localhost:3000/api/equity/{symbol}', timeout=10)
             if resp.status_code == 200:
                 data = resp.json()
+                logging.debug(f"Node.js API response for {symbol}: {data}")
                 if 'priceInfo' in data and 'lastPrice' in data['priceInfo']:
                     live_price = float(data['priceInfo']['lastPrice'])
                     status = 'NodeAPI'
-        except Exception:
-            pass
+        except Exception as e:
+            logging.error(f"Node.js API error for {ticker}: {e}")
         # 2. Fallback to yfinance
         if live_price is None:
             try:
@@ -95,13 +124,19 @@ def fetch_realtime_prices(df: pd.DataFrame) -> pd.DataFrame:
         else:
             rel_status = 'N/A'
         prices.append({
-            'Symbol': ticker,
+            'Ticker': ticker,
             'Live_Price': live_price,
             'Avg_Price': avg_price,
             'Status': rel_status,
-            'Source': status
+            'Source': status,
+            'Error': None if live_price is not None else 'No price found from any source'
         })
-    return pd.DataFrame(prices)
+    logging.debug(f"Final prices DataFrame: {prices}")
+    result_df = pd.DataFrame(prices)
+    # Ensure 'Ticker' column exists for downstream code
+    if 'Symbol' in result_df.columns and 'Ticker' not in result_df.columns:
+        result_df = result_df.rename(columns={'Symbol': 'Ticker'})
+    return result_df
 
 def get_ai_recommendations(df: pd.DataFrame):
     # Realistic logic: Use P/L %, sector, and price trend for recommendations

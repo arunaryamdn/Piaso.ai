@@ -1,7 +1,16 @@
 export const fetchFromBackend = async (endpoint: string) => {
-  const response = await fetch(`http://localhost:8000/${endpoint}`);
+  // Only call backend if portfolio is uploaded or endpoint is upload-portfolio
+  if (!window.sessionStorage.getItem('portfolioUploaded') && endpoint !== 'api/upload-portfolio') {
+    console.debug('Skipping backend call for', endpoint, 'because portfolio is not uploaded');
+    return null;
+  }
+  console.debug('Fetching from backend:', endpoint);
+  const response = await fetch(`http://localhost:5000/${endpoint}`);
   if (!response.ok) {
+    console.error('Network response was not ok:', response.status, response.statusText);
     throw new Error('Network response was not ok');
   }
-  return response.json();
+  const json = await response.json();
+  console.debug('Received data:', json);
+  return json;
 };
