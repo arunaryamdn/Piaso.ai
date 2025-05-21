@@ -12,6 +12,7 @@ export interface DashboardMetrics {
   chart_data?: any[]; // Add chart_data property
   asset_allocation?: Record<string, number>; // Add asset_allocation property
   holdings?: any[]; // Add holdings property
+  metrics?: DashboardMetrics; // Allow for nested metrics property
   // ...add more fields as needed
 }
 

@@ -43,6 +43,18 @@ def calculate_portfolio_metrics(df: pd.DataFrame) -> dict:
     top_performers = top_performers.replace([np.inf, -np.inf, np.nan], None)
     top_losers = top_losers.replace([np.inf, -np.inf, np.nan], None)
     distribution = distribution.replace([np.inf, -np.inf, np.nan], None)
+    # Add holdings for frontend table
+    holdings = []
+    for _, row in df.iterrows():
+        holdings.append({
+            'symbol': row.get('ticker', ''),
+            'name': row.get('ticker', ''),  # You can replace with company name if available
+            'quantity': row.get('quantity available', 0),
+            'avg_price': row.get('average price', 0),
+            'ltp': row.get('current_price', 0),
+            'change': round(((row.get('current_price', 0) - row.get('average price', 0)) / row.get('average price', 1)) * 100, 2) if row.get('average price', 0) else 0,
+            'value': row.get('current_value', 0),
+        })
     return {
         'metrics': {
             'total_investment': float(total_investment),
@@ -56,6 +68,7 @@ def calculate_portfolio_metrics(df: pd.DataFrame) -> dict:
         'top_performers': top_performers.to_dict(orient='records'),
         'top_losers': top_losers.to_dict(orient='records'),
         'distribution': distribution.to_dict(orient='records'),
+        'holdings': holdings,
     }
 
 def fetch_realtime_prices(df: pd.DataFrame) -> pd.DataFrame:
@@ -188,18 +201,19 @@ def get_historical_performance(df: pd.DataFrame, days: int = 30):
         # 1. Try stock-nse-india Node.js API
         try:
             symbol = ticker.replace('.NS', '') if isinstance(ticker, str) and ticker.endswith('.NS') else ticker
-            resp = requests.get(f'http://localhost:3000/api/historical/cm/equity?symbol={symbol}&from={start_date}&to={end_date}', timeout=10)
-            if resp.status_code == 200:
-                data = resp.json()
-                # Try to extract closing prices from the response
-                closes = []
-                if isinstance(data, list):
-                    for chunk in data:
-                        closes += [float(d['CH_CLOSING_PRICE']) for d in chunk['data'] if 'CH_CLOSING_PRICE' in d and d['data']]
-                elif isinstance(data, dict) and 'data' in data:
-                    closes = [float(d['CH_CLOSING_PRICE']) for d in data['data'] if 'CH_CLOSING_PRICE' in d]
-                if closes:
-                    stock_values = pd.Series(closes, index=date_range[:len(closes)]) * quantity
+            if symbol and symbol != 'None':
+                resp = requests.get(f'http://localhost:3000/api/equity/historical/{symbol}?dateStart={start_date}&dateEnd={end_date}', timeout=10)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    # Try to extract closing prices from the response
+                    closes = []
+                    if isinstance(data, list):
+                        for chunk in data:
+                            closes += [float(d['CH_CLOSING_PRICE']) for d in chunk['data'] if 'CH_CLOSING_PRICE' in d and d['data']]
+                    elif isinstance(data, dict) and 'data' in data:
+                        closes = [float(d['CH_CLOSING_PRICE']) for d in data['data'] if 'CH_CLOSING_PRICE' in d]
+                    if closes:
+                        stock_values = pd.Series(closes, index=date_range[:len(closes)]) * quantity
         except Exception:
             pass
         # 2. Fallback to yfinance
