@@ -1,0 +1,87 @@
+// config.ts
+// Frontend configuration and user-facing strings for Paiso.ai.
+
+export const UI_STRINGS = {
+    NAV: {
+        DASHBOARD: 'Dashboard',
+        PORTFOLIO: 'Portfolio',
+        WATCHLIST: 'Market WatchList',
+        NEWS: 'News',
+        PROFILE: 'Profile',
+        AI: 'Analysis',
+        REALTIME: 'Community',
+        LOGOUT: 'Logout',
+    },
+    PROFILE: {
+        TITLE: 'My Profile',
+        UPLOADED_PORTFOLIO: 'Uploaded Portfolio',
+        DELETE_BTN: 'Delete Portfolio',
+        UPLOAD_PROMPT: 'Upload your portfolio Excel to get started',
+        DELETE_CONFIRM: 'Are you sure you want to delete your uploaded portfolio?',
+    },
+    UPLOAD: {
+        TITLE: 'Upload Portfolio',
+        STATUS_DEFAULT: 'No file uploaded yet. Please select a file to upload your portfolio data.',
+        STATUS_SUCCESS: 'Upload successful! Ready to analyze.',
+        STATUS_FAIL: 'Upload failed. Please try again.',
+        BTN: 'Upload Portfolio',
+        FORMAT_HINT: 'Your Excel file should contain the following columns in this specific order: Stock Symbol, Quantity, Average Price, Date of Purchase. The first row must be the header row with these exact column names.',
+        SAMPLE: 'Download Sample Excel File',
+        SUPPORTED_FILE_TYPES: 'Supported file types: .xlsx, .xls. Max file size: 5MB.',
+        SELECTED_FILE: 'Selected file',
+        DRAG_DROP_HINT: 'Drag and drop your Excel file here, or',
+        BROWSE: 'Browse Files',
+        UPLOAD_STATUS_TITLE: 'Upload Status',
+        UPLOAD_PROGRESS: 'Upload Progress',
+        REQUIRED_FORMAT_TITLE: 'Required Excel Format',
+        REQUIRED_FORMAT_DESCRIPTION: 'Your Excel file should contain the following columns in this specific order: Stock Symbol, Quantity, Average Price, Date of Purchase. The first row must be the header row with these exact column names.',
+        DOWNLOAD_SAMPLE: 'Download Sample Excel File',
+    },
+    TABLE: {
+        STOCK_SYMBOL: 'Stock Symbol',
+        QUANTITY: 'Quantity',
+        AVG_PRICE: 'Average Price',
+        PURCHASE_DATE: 'Date of Purchase',
+        SECTOR: 'Sector',
+        ACTIONS: 'Actions',
+    },
+    DASHBOARD: {
+        TITLE: 'My Portfolio',
+        SUBTITLE: 'Track your investments and performance with ease.',
+        TOTAL_VALUE: 'Total Value',
+        PROFIT_LOSS: 'Profit/Loss',
+        TODAY_CHANGE: "Today's Change",
+        INVESTED_AMOUNT: 'Invested Amount',
+        EMPTY_STATE: 'Welcome to your Paiso.ai Dashboard! Get started by uploading your portfolio or adding your first investment.',
+    },
+    NEWS: {
+        TITLE: 'News Feed',
+        UNAVAILABLE: 'News is currently unavailable',
+        UNAVAILABLE_DESC: 'We are working to bring you real-time news soon. Please check back later!',
+        FILTERS: 'Filters',
+        APPLY_FILTERS: 'Apply Filters',
+        REALTIME_FEED: 'Real-Time News Feed',
+    },
+    AUTH: {
+        LOGIN: 'Sign In to Paiso.ai',
+        SIGNUP: 'Create your Paiso.ai account',
+        EMAIL_PLACEHOLDER: 'Email',
+        PASSWORD_PLACEHOLDER: 'Password',
+        REMEMBER_ME: 'Remember Me',
+        SIGNIN_BTN: 'Sign In',
+        SIGNUP_BTN: 'Sign Up',
+        LOGOUT_BTN: 'Logout',
+        ERROR: 'Invalid credentials.',
+    },
+    GENERAL: {
+        LOADING: 'Loading...',
+        ERROR: 'An error occurred. Please try again.',
+        NO_DATA: 'No data to display.',
+        SUCCESS: 'Operation successful!',
+        CONFIRM: 'Are you sure?',
+    },
+};
+
+export const API = {
+    BASE_URL: 'http://localhost:5000',
+}; 

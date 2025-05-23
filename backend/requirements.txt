@@ -10,3 +10,6 @@ beautifulsoup4>=4.12.0
 nsepython>=1.0.0
 nsetools>=1.0.11
 altair>=5.0.0
+python-dotenv
+pytest
+httpx

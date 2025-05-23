@@ -1,10 +1,16 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import logo from '../assets/logo.png'; // Adjust path as needed
+import { motion } from 'framer-motion';
 
 const AIRecommendations: React.FC = () => {
   return (
-    <div className="main-content">
+    <motion.div
+      className="main-content"
+      initial={{ opacity: 0, y: 32 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.7, ease: 'easeOut' }}
+    >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem', width: '100%' }}>
         <h1 style={{ fontSize: '2.2rem', fontWeight: 800, color: '#fff', margin: 0 }}>AI Recommendations</h1>
         {/* Add any action buttons here, styled with dashboard-add-btn if needed */}
@@ -41,8 +47,26 @@ const AIRecommendations: React.FC = () => {
             <h1>AI Investment <span className="ai-title-highlight">Recommendations</span> & Insights</h1>
             <p>Leverage our AI-powered analytics for smarter portfolio decisions. Get actionable insights on diversification, buying/selling opportunities, and risk management.</p>
           </div>
-          <div className="ai-cards-grid fadeInUp">
-            <div className="ai-card">
+          <motion.div
+            className="ai-cards-grid fadeInUp"
+            initial="hidden"
+            animate="visible"
+            variants={{
+              hidden: {},
+              visible: {
+                transition: {
+                  staggerChildren: 0.13,
+                },
+              },
+            }}
+          >
+            <motion.div
+              className="ai-card"
+              variants={{
+                hidden: { opacity: 0, y: 32 },
+                visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' } },
+              }}
+            >
               <div className="ai-card-header">
                 <span className="material-symbols-outlined" style={{ color: '#53d22c' }}>account_balance_wallet</span>
                 <h3>Portfolio Diversification</h3>
@@ -51,8 +75,14 @@ const AIRecommendations: React.FC = () => {
               <button className="ai-card-btn">
                 Explore Diversification <span className="material-symbols-outlined">arrow_forward</span>
               </button>
-            </div>
-            <div className="ai-card">
+            </motion.div>
+            <motion.div
+              className="ai-card"
+              variants={{
+                hidden: { opacity: 0, y: 32 },
+                visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' } },
+              }}
+            >
               <div className="ai-card-header">
                 <span className="material-symbols-outlined" style={{ color: '#53d22c' }}>trending_up</span>
                 <h3>Buying Opportunities</h3>
@@ -61,8 +91,14 @@ const AIRecommendations: React.FC = () => {
               <button className="ai-card-btn">
                 View Opportunities <span className="material-symbols-outlined">arrow_forward</span>
               </button>
-            </div>
-            <div className="ai-card">
+            </motion.div>
+            <motion.div
+              className="ai-card"
+              variants={{
+                hidden: { opacity: 0, y: 32 },
+                visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' } },
+              }}
+            >
               <div className="ai-card-header">
                 <span className="material-symbols-outlined" style={{ color: 'orange' }}>trending_down</span>
                 <h3>Selling Considerations</h3>
@@ -71,8 +107,14 @@ const AIRecommendations: React.FC = () => {
               <button className="ai-card-btn ai-card-btn-orange">
                 Analyze Holdings <span className="material-symbols-outlined">arrow_forward</span>
               </button>
-            </div>
-            <div className="ai-card">
+            </motion.div>
+            <motion.div
+              className="ai-card"
+              variants={{
+                hidden: { opacity: 0, y: 32 },
+                visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' } },
+              }}
+            >
               <div className="ai-card-header">
                 <span className="material-symbols-outlined" style={{ color: '#60a5fa' }}>verified_user</span>
                 <h3>Risk Management</h3>
@@ -81,11 +123,11 @@ const AIRecommendations: React.FC = () => {
               <button className="ai-card-btn ai-card-btn-blue">
                 Learn More <span className="material-symbols-outlined">arrow_forward</span>
               </button>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </main>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

@@ -1,28 +1,35 @@
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
-import yfinance as yf
 import requests
 import logging
+from config import (
+    AI_RECO_BUY_MORE, AI_RECO_SELL, AI_RECO_HOLD,
+    AI_RECO_REASON_DOWN, AI_RECO_REASON_UP, AI_RECO_REASON_TEMP_LOSS, AI_RECO_REASON_NO_SIGNAL
+)
 
 logging.basicConfig(level=logging.DEBUG)
 
 def calculate_portfolio_metrics(df: pd.DataFrame) -> dict:
+    """Calculate portfolio metrics and summary statistics for a given DataFrame. Updated for new column names."""
     logging.debug(f"Calculating portfolio metrics for DataFrame with columns: {df.columns.tolist()} and shape: {df.shape}")
     # Normalize all column names to lowercase
     df.columns = [col.strip().lower() for col in df.columns]
-    # Ensure required columns exist
-    for col in ['quantity available', 'average price', 'live_price', 'ticker']:
+    # Ensure required columns exist (new names)
+    for col in ['quantity', 'average price', 'previous closing price', 'stock symbol']:
         if col not in df:
             df[col] = 0
+    # Add 'ticker' column if missing (use 'stock symbol')
+    if 'ticker' not in df.columns and 'stock symbol' in df.columns:
+        df['ticker'] = df['stock symbol']
     # Calculate investment, value, P/L
-    df['investment'] = df['quantity available'] * df['average price']
+    df['investment'] = df['quantity'] * df['average price']
     # Use live_price if available, else previous closing price
     if 'live_price' in df.columns and df['live_price'].notnull().any():
-        df['current_value'] = df['quantity available'] * df['live_price']
+        df['current_value'] = df['quantity'] * df['live_price']
         df['current_price'] = df['live_price']
     else:
-        df['current_value'] = df['quantity available'] * df['previous closing price']
+        df['current_value'] = df['quantity'] * df['previous closing price']
         df['current_price'] = df['previous closing price']
     df['p_l'] = df['current_value'] - df['investment']
     df['p_l_percent'] = (df['p_l'] / df['investment']) * 100
@@ -49,7 +56,7 @@ def calculate_portfolio_metrics(df: pd.DataFrame) -> dict:
         holdings.append({
             'symbol': row.get('ticker', ''),
             'name': row.get('ticker', ''),  # You can replace with company name if available
-            'quantity': row.get('quantity available', 0),
+            'quantity': row.get('quantity', 0),
             'avg_price': row.get('average price', 0),
             'ltp': row.get('current_price', 0),
             'change': round(((row.get('current_price', 0) - row.get('average price', 0)) / row.get('average price', 1)) * 100, 2) if row.get('average price', 0) else 0,
@@ -72,6 +79,7 @@ def calculate_portfolio_metrics(df: pd.DataFrame) -> dict:
     }
 
 def fetch_realtime_prices(df: pd.DataFrame) -> pd.DataFrame:
+    """Fetch real-time prices for each ticker in the DataFrame using Node.js API."""
     logging.debug(f"Fetching realtime prices for DataFrame with columns: {df.columns.tolist()} and shape: {df.shape}")
     df = df.copy()
     # Normalize column names: lowercase and strip spaces
@@ -94,7 +102,7 @@ def fetch_realtime_prices(df: pd.DataFrame) -> pd.DataFrame:
         if not ticker:
             prices.append({'Ticker': None, 'Live_Price': None, 'Avg_Price': avg_price, 'Status': 'N/A', 'Source': 'None'})
             continue
-        # 1. Try Node.js API
+        # Only use Node.js API
         try:
             symbol = ticker.replace('.NS', '') if isinstance(ticker, str) and ticker.endswith('.NS') else ticker
             resp = requests.get(f'http://localhost:3000/api/equity/{symbol}', timeout=10)
@@ -106,27 +114,6 @@ def fetch_realtime_prices(df: pd.DataFrame) -> pd.DataFrame:
                     status = 'NodeAPI'
         except Exception as e:
             logging.error(f"Node.js API error for {ticker}: {e}")
-        # 2. Fallback to yfinance
-        if live_price is None:
-            try:
-                yf_ticker = yf.Ticker(ticker)
-                hist = yf_ticker.history(period='1d')
-                if not hist.empty:
-                    live_price = float(hist['Close'].iloc[-1])
-                    status = 'Yahoo'
-            except Exception:
-                pass
-        # 3. Fallback to nsepython
-        if live_price is None:
-            try:
-                from nsepython import nsefetch
-                nse_symbol = ticker.replace('.NS', '') if isinstance(ticker, str) else ticker
-                nse_data = nsefetch(f'https://www.nseindia.com/api/quote-equity?symbol={nse_symbol}')
-                if nse_data and 'priceInfo' in nse_data and 'lastPrice' in nse_data['priceInfo']:
-                    live_price = float(nse_data['priceInfo']['lastPrice'])
-                    status = 'nsepython'
-            except Exception:
-                pass
         if live_price is not None:
             if avg_price < live_price:
                 rel_status = 'Live > Avg'
@@ -152,42 +139,36 @@ def fetch_realtime_prices(df: pd.DataFrame) -> pd.DataFrame:
     return result_df
 
 def get_ai_recommendations(df: pd.DataFrame):
-    # Realistic logic: Use P/L %, sector, and price trend for recommendations
-    import yfinance as yf
+    """Generate AI recommendations for each stock in the portfolio."""
     recos = []
     for _, row in df.iterrows():
-        symbol = row.get('Ticker')
-        pl_percent = row.get('P_L_Percent', 0)
-        sector = row.get('Sector', 'Unknown')
-        try:
-            # Get recent price trend (last 7 days)
-            hist = yf.Ticker(symbol).history(period='7d')
-            trend = 'Up' if not hist.empty and hist['Close'].iloc[-1] > hist['Close'].iloc[0] else 'Down'
-        except Exception:
-            trend = 'Unknown'
-        if pl_percent < -10 and trend == 'Up':
-            rec = 'Buy More'
-            reason = 'Stock is recovering from a dip.'
-        elif pl_percent > 20 and trend == 'Down':
-            rec = 'Sell'
-            reason = 'Stock is up significantly but showing weakness.'
+        symbol = row.get('Ticker') or row.get('ticker')
+        pl_percent = row.get('P_L_Percent', 0) or row.get('p_l_percent', 0)
+        sector = row.get('Sector', 'Unknown') or row.get('sector', 'Unknown')
+        # Simple logic: recommend based on P/L %
+        if pl_percent < -10:
+            rec = AI_RECO_BUY_MORE
+            reason = AI_RECO_REASON_DOWN
+        elif pl_percent > 20:
+            rec = AI_RECO_SELL
+            reason = AI_RECO_REASON_UP
         elif pl_percent < 0:
-            rec = 'Hold'
-            reason = 'Temporary loss, but no strong sell signal.'
+            rec = AI_RECO_HOLD
+            reason = AI_RECO_REASON_TEMP_LOSS
         else:
-            rec = 'Hold'
-            reason = 'No strong buy/sell signal.'
+            rec = AI_RECO_HOLD
+            reason = AI_RECO_REASON_NO_SIGNAL
         recos.append({
             'Symbol': symbol,
             'Sector': sector,
             'P/L %': round(pl_percent, 2),
-            'Trend': trend,
             'Recommendation': rec,
             'Reason': reason
         })
     return recos
 
 def get_historical_performance(df: pd.DataFrame, days: int = 30):
+    """Calculate historical performance for the portfolio over a given number of days."""
     start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
     end_date = datetime.now().strftime('%Y-%m-%d')
     date_range = pd.date_range(start=start_date, end=end_date)
@@ -195,17 +176,16 @@ def get_historical_performance(df: pd.DataFrame, days: int = 30):
     hist_data.index.name = 'Date'
     hist_data['Portfolio_Value'] = 0.0
     for _, row in df.iterrows():
-        ticker = row.get('Ticker')
-        quantity = row.get('Quantity', 0)
+        ticker = row.get('Ticker') or row.get('ticker')
+        quantity = row.get('Quantity', 0) or row.get('quantity', 0)
         stock_values = None
-        # 1. Try stock-nse-india Node.js API
+        # Only use Node.js API
         try:
             symbol = ticker.replace('.NS', '') if isinstance(ticker, str) and ticker.endswith('.NS') else ticker
             if symbol and symbol != 'None':
                 resp = requests.get(f'http://localhost:3000/api/equity/historical/{symbol}?dateStart={start_date}&dateEnd={end_date}', timeout=10)
                 if resp.status_code == 200:
                     data = resp.json()
-                    # Try to extract closing prices from the response
                     closes = []
                     if isinstance(data, list):
                         for chunk in data:
@@ -216,25 +196,6 @@ def get_historical_performance(df: pd.DataFrame, days: int = 30):
                         stock_values = pd.Series(closes, index=date_range[:len(closes)]) * quantity
         except Exception:
             pass
-        # 2. Fallback to yfinance
-        if stock_values is None:
-            try:
-                stock_hist = yf.download(ticker, start=start_date, end=end_date, progress=False)
-                if stock_hist is not None and not stock_hist.empty and 'Close' in stock_hist:
-                    stock_values = stock_hist['Close'] * quantity
-            except Exception:
-                pass
-        # 3. Fallback to nsepython
-        if stock_values is None:
-            try:
-                from nsepython import nsefetch
-                nse_symbol = ticker.replace('.NS', '') if isinstance(ticker, str) else ticker
-                nse_data = nsefetch(f'https://www.nseindia.com/api/quote-equity?symbol={nse_symbol}')
-                if nse_data and 'priceInfo' in nse_data and 'lastPrice' in nse_data['priceInfo']:
-                    last_price = float(nse_data['priceInfo']['lastPrice'])
-                    stock_values = pd.Series([last_price] * len(date_range), index=date_range) * quantity
-            except Exception:
-                pass
         if stock_values is not None:
             hist_data['Portfolio_Value'] += stock_values.reindex(hist_data.index).fillna(method='ffill')
     hist_data['Portfolio_Value'] = hist_data['Portfolio_Value'].replace([np.inf, -np.inf], np.nan).fillna(0)
@@ -243,6 +204,7 @@ def get_historical_performance(df: pd.DataFrame, days: int = 30):
     return hist_data.to_dict(orient='records')
 
 def create_risk_profile(df: pd.DataFrame, hist_data: list):
+    """Create a risk profile for the portfolio based on historical data."""
     import pandas as pd
     import numpy as np
     # Convert hist_data to DataFrame if needed
@@ -291,7 +253,7 @@ def create_risk_profile(df: pd.DataFrame, hist_data: list):
     }
 
 def get_sector_analysis(df: pd.DataFrame):
-    # Group by sector and sum current value
+    """Group by sector and sum current value for sector analysis."""
     if 'Sector' in df and 'Current_Value' in df:
         sector_dist = df.groupby('Sector')['Current_Value'].sum().reset_index()
         sector_dist = sector_dist.rename(columns={'Current_Value': 'Current_Value', 'Sector': 'Sector'})
@@ -299,27 +261,8 @@ def get_sector_analysis(df: pd.DataFrame):
     return []
 
 def get_news(df: pd.DataFrame):
-    import yfinance as yf
-    import time
-    news_dict = {}
-    tickers = df['Ticker'].unique() if 'Ticker' in df else []
-    for ticker in tickers:
-        try:
-            ticker_obj = yf.Ticker(ticker)
-            articles = ticker_obj.news[:5] if hasattr(ticker_obj, 'news') else []
-            news_dict[ticker] = [
-                {
-                    'title': article.get('title', ''),
-                    'link': article.get('link', ''),
-                    'publisher': article.get('publisher', ''),
-                    'providerPublishTime': article.get('providerPublishTime', '')
-                }
-                for article in articles
-            ]
-            time.sleep(0.1)  # avoid rate limits
-        except Exception:
-            news_dict[ticker] = []
-    return news_dict
+    """Placeholder: no yfinance, no news fetching."""
+    return {}
 
 # Expose all real business logic for import in main.py
 __all__ = [

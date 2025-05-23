@@ -24,4 +24,14 @@ See the main project README for endpoint details.
    ```
 
 ## License
-MIT License 
+MIT License
+
+## Running Tests
+
+Backend tests are located in the `tests/` directory. To run all tests:
+
+```
+pytest
+```
+
+Make sure you have installed the dev dependencies from `requirements.txt` (including `pytest` and `httpx`). 

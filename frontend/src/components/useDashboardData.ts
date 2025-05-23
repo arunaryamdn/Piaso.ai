@@ -16,17 +16,18 @@ export interface DashboardMetrics {
   // ...add more fields as needed
 }
 
-export function useDashboardData() {
+export function useDashboardData(reloadCount = 0) {
   const [data, setData] = useState<DashboardMetrics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    setLoading(true);
     fetchFromBackend('api/dashboard')
       .then(setData)
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
-  }, []);
+  }, [reloadCount]);
 
   return { data, loading, error };
 }
