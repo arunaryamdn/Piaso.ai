@@ -5,6 +5,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import logo from '../assets/logo.png'; // Adjust path as needed
 import { UI_STRINGS } from '../config';
+import { mutate } from 'swr';
 
 interface PortfolioUploadProps {
   onUploadSuccess: () => void;
@@ -41,6 +42,7 @@ const PortfolioUpload: React.FC<PortfolioUploadProps> = ({ onUploadSuccess }) =>
           setProcessing(false);
           setProcessingMsg('Portfolio processed!');
           clearInterval(pollingRef.current!);
+          mutate(['dashboard-analytics']);
           onUploadSuccess();
         } else if (data.status === 'failed') {
           setProcessing(false);

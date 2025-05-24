@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 import Dashboard from './components/Dashboard';
 import PortfolioTable from './components/PortfolioTable';
 import PortfolioUpload from './components/PortfolioUpload';
@@ -7,16 +8,16 @@ import RealTimePrices from './components/RealTimePrices';
 import AIRecommendations from './components/AIRecommendations';
 import News from './components/News';
 import McpChat from './components/McpChat';
-import NotFound from './pages/NotFound';
-import ZerodhaAuthCallback from './pages/ZerodhaAuthCallback';
+import NotFound from './components/NotFound';
+import ZerodhaAuthCallback from './components/ZerodhaAuthCallback';
 import Layout from './components/Layout';
-import LandingPage from './pages/LandingPage';
-import LoginPage from './pages/LoginPage';
-import SignupPage from './pages/SignupPage';
-import DashboardPage from './pages/DashboardPage';
-import ProfilePage from './pages/ProfilePage';
-import NewsPage from './pages/NewsPage';
-import PortfolioPage from './pages/PortfolioPage';
+import LandingPage from './components/LandingPage';
+import LoginPage from './components/LoginPage';
+import SignupPage from './components/SignupPage';
+import DashboardPage from './components/DashboardPage';
+import ProfilePage from './components/ProfilePage';
+import NewsPage from './components/NewsPage';
+import PortfolioPage from './components/PortfolioPage';
 import './App.css';
 
 function getToken() {
@@ -44,6 +45,54 @@ function PrivateRoute() {
     return <Navigate to="/login" replace />;
   }
   return <Outlet />;
+}
+
+function AnimatedRoutes() {
+  const location = useLocation();
+  const pageTransition = {
+    initial: { opacity: 0, y: 24 },
+    animate: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } },
+    exit: { opacity: 0, y: -24, transition: { duration: 0.3, ease: 'easeIn' } },
+  };
+  return (
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        {/* Public routes: no Layout */}
+        <Route path="/" element={
+          <motion.div {...pageTransition} className="min-h-screen">
+            <LandingPage />
+          </motion.div>
+        } />
+        <Route path="/login" element={
+          <motion.div {...pageTransition} className="min-h-screen">
+            <LoginPage />
+          </motion.div>
+        } />
+        <Route path="/signup" element={
+          <motion.div {...pageTransition} className="min-h-screen">
+            <SignupPage />
+          </motion.div>
+        } />
+        <Route path="/zerodha/callback" element={<ZerodhaAuthCallback />} />
+        <Route path="/news" element={<NewsPage />} />
+        <Route path="*" element={<NotFound />} />
+        {/* Protected routes: with Layout */}
+        <Route element={<PrivateRoute />}>
+          <Route element={<Layout />}>
+            <Route path="/dashboard" element={
+              <motion.div {...pageTransition} className="min-h-screen">
+                <DashboardPage />
+              </motion.div>
+            } />
+            <Route path="/portfolio" element={<PortfolioPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/realtime" element={<RealTimePrices />} />
+            <Route path="/ai" element={<AIRecommendations />} />
+          </Route>
+        </Route>
+      </Routes>
+    </AnimatePresence>
+  );
 }
 
 function App() {
@@ -151,26 +200,7 @@ function App() {
           </div>
         </div>
       )}
-      <Routes>
-        {/* Public routes: no Layout */}
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignupPage />} />
-        <Route path="/zerodha/callback" element={<ZerodhaAuthCallback />} />
-        <Route path="/news" element={<NewsPage />} />
-        <Route path="*" element={<NotFound />} />
-
-        {/* Protected routes: with Layout */}
-        <Route element={<PrivateRoute />}>
-          <Route element={<Layout />}>
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/portfolio" element={<PortfolioPage />} />
-            <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/realtime" element={<RealTimePrices />} />
-            <Route path="/ai" element={<AIRecommendations />} />
-          </Route>
-        </Route>
-      </Routes>
+      <AnimatedRoutes />
     </Router>
   );
 }

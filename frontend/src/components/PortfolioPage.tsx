@@ -128,7 +128,8 @@ const ProfilePage: React.FC = () => {
         return (
             <div className="w-full max-w-3xl mx-auto py-8 px-2 md:px-8 flex flex-col items-center justify-center min-h-[60vh]">
                 <div className="text-2xl font-bold text-[#7ecbff] mb-4">No portfolio uploaded yet.</div>
-                <div className="text-lg text-gray-300">Upload your portfolio to get started.</div>
+                <div className="text-lg text-gray-300 mb-6">Upload your portfolio to get started.</div>
+                <PortfolioUpload onUploadSuccess={handleUploadSuccess} />
             </div>
         );
     }

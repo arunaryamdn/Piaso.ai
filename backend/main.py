@@ -7,7 +7,7 @@ import os
 import certifi
 import numpy as np
 import logging
-from fastapi import Request, Response, Depends, Header
+from fastapi import Request, Response, Depends, Header, Body
 import requests
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -21,6 +21,7 @@ from utils.portfolio import (
     create_risk_profile,
     get_news,
     get_sector_analysis,
+    get_portfolio_metrics_history,
 )
 import hashlib
 import subprocess
@@ -186,6 +187,9 @@ def process_portfolio_async(user_id, df):
             on='ticker',
             how='left'
         )
+        # Patch: Always set current_price = live_price if available
+        if 'live_price' in df.columns:
+            df['current_price'] = df['live_price']
         # Save processed data and set status to 'ready'
         conn = sqlite3.connect(DB_PATH)
         c = conn.cursor()
@@ -320,6 +324,28 @@ def get_dashboard(user_id: int = Depends(get_user_id_from_token)):
         logging.error(f"{LOG_PREFIX} Error calculating dashboard for user_id={user_id}: {e}")
         raise HTTPException(status_code=500, detail=MSG_INTERNAL_ERROR)
 
+@app.post('/api/sector_analysis')
+def sector_analysis_post(request: Request, user_id: int = Depends(get_user_id_from_token), body: dict = Body(default={})):  # noqa: E501
+    """Return sector analysis for the given or stored portfolio."""
+    logging.debug("Received POST /api/sector_analysis request")
+    portfolio = body.get('portfolio')
+    if portfolio is not None:
+        df = pd.DataFrame(portfolio)
+    else:
+        # Use stored portfolio
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+        c.execute('SELECT data FROM portfolios WHERE user_id = ?', (user_id,))
+        row = c.fetchone()
+        conn.close()
+        if not row or not row[0]:
+            logging.error(MSG_NO_PORTFOLIO)
+            raise HTTPException(status_code=404, detail=MSG_NO_PORTFOLIO)
+        df = pd.DataFrame(json.loads(row[0]))
+    result = get_sector_analysis(df)
+    logging.debug(f"Sector analysis result: {result}")
+    return result
+
 @app.get("/api/sector_analysis")
 def sector_analysis():
     """Return sector analysis for the current portfolio (demo/global)."""
@@ -367,6 +393,31 @@ def news():
     result = get_news(portfolio_df)
     logging.debug(f"News result: {result}")
     return result
+
+@app.post('/api/historical')
+def historical_performance_post(request: Request, user_id: int = Depends(get_user_id_from_token), body: dict = Body(default={})):  # noqa: E501
+    """Return historical performance for the given or stored portfolio."""
+    logging.debug("Received POST /api/historical request")
+    portfolio = body.get('portfolio')
+    days = body.get('days', 30)
+    if not isinstance(days, int) or days < 1 or days > MAX_DAYS:
+        raise HTTPException(status_code=400, detail=f"Invalid 'days' parameter. Must be an integer between 1 and {MAX_DAYS}.")
+    if portfolio is not None:
+        df = pd.DataFrame(portfolio)
+    else:
+        # Use stored portfolio
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+        c.execute('SELECT data FROM portfolios WHERE user_id = ?', (user_id,))
+        row = c.fetchone()
+        conn.close()
+        if not row or not row[0]:
+            logging.error(MSG_NO_PORTFOLIO)
+            raise HTTPException(status_code=404, detail=MSG_NO_PORTFOLIO)
+        df = pd.DataFrame(json.loads(row[0]))
+    data = get_historical_performance(df, days=days)
+    logging.info(f"Historical performance calculated for user_id={user_id}")
+    return data
 
 @app.get('/api/historical')
 def historical_performance(days: int = 30, user_id: int = Depends(get_user_id_from_token)):
@@ -527,6 +578,112 @@ def get_portfolio_status(user_id: int = Depends(get_user_id_from_token)):
     if not row:
         return {'status': 'not_found'}
     return {'status': row[0]}
+
+# New endpoint: Portfolio metrics history for multiple timeframes
+@app.get('/api/portfolio/metrics-history')
+def get_portfolio_metrics_history_endpoint(user_id: int = Depends(get_user_id_from_token)):
+    """Return portfolio metrics for multiple timeframes (last year, month, week, day, today)."""
+    logging.debug(f"{LOG_PREFIX} Calculating metrics history for user_id={user_id}")
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+        c.execute('SELECT data FROM portfolios WHERE user_id = ?', (user_id,))
+        row = c.fetchone()
+        conn.close()
+        if not row:
+            logging.warning(f"{LOG_PREFIX} {MSG_NO_PORTFOLIO} for user_id={user_id}")
+            raise HTTPException(status_code=404, detail=MSG_NO_PORTFOLIO)
+        df = pd.DataFrame(json.loads(row[0]))
+        result = get_portfolio_metrics_history(df)
+        logging.info(f"{LOG_PREFIX} Metrics history calculated for user_id={user_id}")
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"{LOG_PREFIX} Error calculating metrics history for user_id={user_id}: {e}")
+        raise HTTPException(status_code=500, detail=MSG_INTERNAL_ERROR)
+
+@app.post('/api/portfolio_table')
+def portfolio_table_post(request: Request, user_id: int = Depends(get_user_id_from_token), body: dict = Body(default={})):  # noqa: E501
+    """Return portfolio table for the given or stored portfolio."""
+    logging.debug("Received POST /api/portfolio_table request")
+    portfolio = body.get('portfolio')
+    if portfolio is not None:
+        df = pd.DataFrame(portfolio)
+    else:
+        # Use stored portfolio
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+        c.execute('SELECT data FROM portfolios WHERE user_id = ?', (user_id,))
+        row = c.fetchone()
+        conn.close()
+        if not row or not row[0]:
+            logging.error(MSG_NO_PORTFOLIO)
+            raise HTTPException(status_code=404, detail=MSG_NO_PORTFOLIO)
+        df = pd.DataFrame(json.loads(row[0]))
+    # Patch: Ensure current_price is set from live_price if present
+    if 'live_price' in df.columns and 'current_price' not in df.columns:
+        df['current_price'] = df['live_price']
+    # For demo, just return holdings as table
+    holdings = []
+    for _, row in df.iterrows():
+        holdings.append({
+            'symbol': row.get('ticker', ''),
+            'name': row.get('ticker', ''),
+            'quantity': row.get('quantity', 0),
+            'avg_price': row.get('average price', 0),
+            'ltp': row.get('current_price', 0),
+            'change': round(((row.get('current_price', 0) - row.get('average price', 0)) / row.get('average price', 1)) * 100, 2) if row.get('average price', 0) else 0,
+            'value': row.get('current_value', 0),
+        })
+    return {'holdings': holdings}
+
+@app.get('/api/dashboard/analytics')
+def get_dashboard_analytics(user_id: int = Depends(get_user_id_from_token)):
+    """Return all dashboard analytics in one call: metrics, sector, historical, holdings."""
+    try:
+        # Get stored portfolio
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+        c.execute('SELECT data FROM portfolios WHERE user_id = ?', (user_id,))
+        row = c.fetchone()
+        conn.close()
+        if not row or not row[0]:
+            logging.warning(f"{LOG_PREFIX} {MSG_NO_PORTFOLIO} for user_id={user_id}")
+            raise HTTPException(status_code=404, detail=MSG_NO_PORTFOLIO)
+        df = pd.DataFrame(json.loads(row[0]))
+        # Patch: Ensure current_price is set from live_price if present
+        if 'live_price' in df.columns and 'current_price' not in df.columns:
+            df['current_price'] = df['live_price']
+        # Metrics history
+        metrics = get_portfolio_metrics_history(df)
+        # Sector analysis
+        sector = get_sector_analysis(df)
+        # Historical performance (default 90 days)
+        historical = get_historical_performance(df, days=90)
+        # Portfolio table/holdings
+        holdings = []
+        for _, row in df.iterrows():
+            holdings.append({
+                'symbol': row.get('ticker', ''),
+                'name': row.get('ticker', ''),
+                'quantity': row.get('quantity', 0),
+                'avg_price': row.get('average price', 0),
+                'ltp': row.get('current_price', 0),
+                'change': round(((row.get('current_price', 0) - row.get('average price', 0)) / row.get('average price', 1)) * 100, 2) if row.get('average price', 0) else 0,
+                'value': row.get('current_value', 0),
+            })
+        return {
+            'metrics': metrics,
+            'sector': sector,
+            'historical': historical,
+            'holdings': holdings
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"{LOG_PREFIX} Error in dashboard analytics for user_id={user_id}: {e}")
+        raise HTTPException(status_code=500, detail=MSG_INTERNAL_ERROR)
 
 if __name__ == '__main__':
     import uvicorn

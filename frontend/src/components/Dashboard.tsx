@@ -7,6 +7,13 @@ import { fetchFromBackend } from '../services/api';
 import { motion } from 'framer-motion';
 import PortfolioUpload from './PortfolioUpload';
 import { mapPortfolioData } from '../utils/portfolioMapping';
+import SectorAnalysis from './SectorAnalysis';
+import HistoricalPerformance from './HistoricalPerformance';
+import StockWisePerformance from './StockWisePerformance';
+
+// DEBUG: Prove Dashboard file load
+console.log('PAISO.AI DEBUG: This is the real frontend!')
+console.log('DASHBOARD DEBUG: Dashboard.tsx file loaded!');
 
 const Dashboard: React.FC = () => {
   const [reloadCount, setReloadCount] = useState(0);
@@ -181,75 +188,82 @@ const Dashboard: React.FC = () => {
             </div>
           </motion.div>
         ) : (
-          <motion.div
-            className="dashboard-cards-grid"
-            initial="hidden"
-            animate="visible"
-            variants={{
-              hidden: {},
-              visible: {
-                transition: {
-                  staggerChildren: 0.13,
-                },
-              },
-            }}
-          >
+          <>
+            {/* Summary cards grid (existing) */}
             <motion.div
-              className="dashboard-card"
+              className="dashboard-cards-grid"
+              initial="hidden"
+              animate="visible"
               variants={{
-                hidden: { opacity: 0, y: 32 },
-                visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' } },
+                hidden: {},
+                visible: { transition: { staggerChildren: 0.13 } },
               }}
             >
-              <div className="card-title">Total Value</div>
-              <div className="card-value">₹{metrics.total_value?.toLocaleString() ?? '0'}</div>
-              <div className={`card-change ${vsLastMonthPositive ? 'positive' : 'negative'}`}>
-                <span className="material-icons">{vsLastMonthPositive ? 'arrow_upward' : 'arrow_downward'}</span>
-                <span>{vsLastMonthPositive ? '+' : ''}{vsLastMonthPercent?.toFixed(2) ?? '0.00'}%</span>
-                <span className="card-change-label">vs last month</span>
-              </div>
+              <motion.div
+                className="dashboard-card"
+                variants={{
+                  hidden: { opacity: 0, y: 32 },
+                  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' } },
+                }}
+              >
+                <div className="card-title">Total Value</div>
+                <div className="card-value">₹{metrics.total_value?.toLocaleString() ?? '0'}</div>
+                <div className={`card-change ${vsLastMonthPositive ? 'positive' : 'negative'}`}>
+                  <span className="material-icons">{vsLastMonthPositive ? 'arrow_upward' : 'arrow_downward'}</span>
+                  <span>{vsLastMonthPositive ? '+' : ''}{vsLastMonthPercent?.toFixed(2) ?? '0.00'}%</span>
+                  <span className="card-change-label">vs last month</span>
+                </div>
+              </motion.div>
+              <motion.div
+                className="dashboard-card"
+                variants={{
+                  hidden: { opacity: 0, y: 32 },
+                  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' } },
+                }}
+              >
+                <div className="card-title">Profit/Loss</div>
+                <div className="card-value">₹{metrics.total_pl?.toLocaleString() ?? '0'}</div>
+                <div className={`card-change ${plPositive ? 'positive' : 'negative'}`}>
+                  <span className="material-icons">{plPositive ? 'arrow_upward' : 'arrow_downward'}</span>
+                  <span>{plPositive ? '+' : ''}{plPercent?.toFixed(2) ?? '0.00'}%</span>
+                  <span className="card-change-label">all time</span>
+                </div>
+              </motion.div>
+              <motion.div
+                className="dashboard-card"
+                variants={{
+                  hidden: { opacity: 0, y: 32 },
+                  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' } },
+                }}
+              >
+                <div className="card-title">Today's Change</div>
+                <div className={`card-value ${todayChangePositive ? 'positive' : 'negative'}`}>{todayChangePositive ? '+' : ''}₹{todayChange?.toLocaleString() ?? '0'}</div>
+                <div className={`card-change ${todayChangePositive ? 'positive' : 'negative'}`}>
+                  <span className="material-icons">{todayChangePositive ? 'trending_up' : 'trending_down'}</span>
+                  <span>{todayChangePositive ? '+' : ''}{todayChangePercent?.toFixed(2) ?? '0.00'}%</span>
+                </div>
+              </motion.div>
+              <motion.div
+                className="dashboard-card"
+                variants={{
+                  hidden: { opacity: 0, y: 32 },
+                  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' } },
+                }}
+              >
+                <div className="card-title">Invested Amount</div>
+                <div className="card-value">₹{metrics.total_investment?.toLocaleString() ?? '0'}</div>
+                <div className="card-change-label" style={{ color: '#b5cbb0', fontSize: '0.95rem', marginTop: 4 }}>Across all assets</div>
+              </motion.div>
             </motion.div>
-            <motion.div
-              className="dashboard-card"
-              variants={{
-                hidden: { opacity: 0, y: 32 },
-                visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' } },
-              }}
-            >
-              <div className="card-title">Profit/Loss</div>
-              <div className="card-value">₹{metrics.total_pl?.toLocaleString() ?? '0'}</div>
-              <div className={`card-change ${plPositive ? 'positive' : 'negative'}`}>
-                <span className="material-icons">{plPositive ? 'arrow_upward' : 'arrow_downward'}</span>
-                <span>{plPositive ? '+' : ''}{plPercent?.toFixed(2) ?? '0.00'}%</span>
-                <span className="card-change-label">all time</span>
-              </div>
-            </motion.div>
-            <motion.div
-              className="dashboard-card"
-              variants={{
-                hidden: { opacity: 0, y: 32 },
-                visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' } },
-              }}
-            >
-              <div className="card-title">Today's Change</div>
-              <div className={`card-value ${todayChangePositive ? 'positive' : 'negative'}`}>{todayChangePositive ? '+' : ''}₹{todayChange?.toLocaleString() ?? '0'}</div>
-              <div className={`card-change ${todayChangePositive ? 'positive' : 'negative'}`}>
-                <span className="material-icons">{todayChangePositive ? 'trending_up' : 'trending_down'}</span>
-                <span>{todayChangePositive ? '+' : ''}{todayChangePercent?.toFixed(2) ?? '0.00'}%</span>
-              </div>
-            </motion.div>
-            <motion.div
-              className="dashboard-card"
-              variants={{
-                hidden: { opacity: 0, y: 32 },
-                visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' } },
-              }}
-            >
-              <div className="card-title">Invested Amount</div>
-              <div className="card-value">₹{metrics.total_investment?.toLocaleString() ?? '0'}</div>
-              <div className="card-change-label" style={{ color: '#b5cbb0', fontSize: '0.95rem', marginTop: 4 }}>Across all assets</div>
-            </motion.div>
-          </motion.div>
+            {/* Analytics sections below, flexible layout */}
+            <div className="flex flex-col gap-8 mt-10 w-full max-w-6xl mx-auto">
+              // DEBUG: Prove Dashboard file load
+              console.log('DASHBOARD DEBUG: About to render <SectorAnalysis />');
+              <SectorAnalysis />
+              <HistoricalPerformance />
+              <StockWisePerformance />
+            </div>
+          </>
         )}
       </main>
     </div>

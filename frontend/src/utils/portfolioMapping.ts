@@ -10,10 +10,10 @@ export interface PortfolioTableRow {
 
 export function mapPortfolioRow(row: any): PortfolioTableRow {
     return {
-        symbol: row.symbol || row.ticker || row['stock symbol'] || '',
-        quantity: row.quantity ?? row['quantity available'] ?? 0,
-        avg_price: row.avg_price ?? row['average price'] ?? 0,
-        purchase_date: row.purchase_date || row['date of purchase'] || '',
+        symbol: row.symbol || row.ticker || row['stock symbol'] || row.Stock || '',
+        quantity: row.quantity ?? row['quantity available'] ?? row.Quantity ?? 0,
+        avg_price: row.avg_price ?? row['average price'] ?? row.Avg_Price ?? 0,
+        purchase_date: row.purchase_date || row['date of purchase'] || row.Buy_Date || '',
     };
 }
 

@@ -10,29 +10,47 @@ from config import (
 
 logging.basicConfig(level=logging.DEBUG)
 
+def normalize_columns(df):
+    # Lowercase, strip, and replace underscores with spaces for matching
+    df.columns = [col.strip().lower().replace('_', ' ') for col in df.columns]
+    return df
+
+def get_first_column(df, candidates):
+    for col in candidates:
+        if col in df.columns:
+            return col
+    return None
+
 def calculate_portfolio_metrics(df: pd.DataFrame) -> dict:
     """Calculate portfolio metrics and summary statistics for a given DataFrame. Updated for new column names."""
     logging.debug(f"Calculating portfolio metrics for DataFrame with columns: {df.columns.tolist()} and shape: {df.shape}")
-    # Normalize all column names to lowercase
-    df.columns = [col.strip().lower() for col in df.columns]
+    df = normalize_columns(df)
     # Ensure required columns exist (new names)
-    for col in ['quantity', 'average price', 'previous closing price', 'stock symbol']:
+    for col in ['quantity', 'quantity available', 'average price', 'previous closing price', 'stock symbol']:
         if col not in df:
             df[col] = 0
     # Add 'ticker' column if missing (use 'stock symbol')
     if 'ticker' not in df.columns and 'stock symbol' in df.columns:
         df['ticker'] = df['stock symbol']
-    # Calculate investment, value, P/L
-    df['investment'] = df['quantity'] * df['average price']
-    # Use live_price if available, else previous closing price
-    if 'live_price' in df.columns and df['live_price'].notnull().any():
-        df['current_value'] = df['quantity'] * df['live_price']
-        df['current_price'] = df['live_price']
+    quantity_col = get_first_column(df, ['quantity', 'quantity available'])
+    # Patch: Always use current_price if available, else fallback to live_price, else fallback to price columns
+    price_col = None
+    if 'current price' in df.columns:
+        price_col = 'current price'
+    elif 'live price' in df.columns:
+        price_col = 'live price'
     else:
-        df['current_value'] = df['quantity'] * df['previous closing price']
-        df['current_price'] = df['previous closing price']
+        price_col = get_first_column(df, ['previous closing price', 'current price', 'average price', 'avg price'])
+    # Calculate investment, value, P/L
+    df['investment'] = df[quantity_col] * df['average price'] if quantity_col and 'average price' in df else 0
+    if quantity_col and price_col:
+        df['current_value'] = df[quantity_col] * df[price_col]
+        df['current_price'] = df[price_col]
+    else:
+        df['current_value'] = 0
+        df['current_price'] = 0
     df['p_l'] = df['current_value'] - df['investment']
-    df['p_l_percent'] = (df['p_l'] / df['investment']) * 100
+    df['p_l_percent'] = (df['p_l'] / df['investment']) * 100 if (df['investment'] != 0).any() else 0
     # Portfolio metrics
     total_investment = df['investment'].sum()
     total_value = df['current_value'].sum()
@@ -50,13 +68,13 @@ def calculate_portfolio_metrics(df: pd.DataFrame) -> dict:
     top_performers = top_performers.replace([np.inf, -np.inf, np.nan], None)
     top_losers = top_losers.replace([np.inf, -np.inf, np.nan], None)
     distribution = distribution.replace([np.inf, -np.inf, np.nan], None)
-    # Add holdings for frontend table
+    # Add holdings for frontend table (all keys lowercase)
     holdings = []
     for _, row in df.iterrows():
         holdings.append({
             'symbol': row.get('ticker', ''),
-            'name': row.get('ticker', ''),  # You can replace with company name if available
-            'quantity': row.get('quantity', 0),
+            'name': row.get('ticker', ''),
+            'quantity': row.get(quantity_col, 0),
             'avg_price': row.get('average price', 0),
             'ltp': row.get('current_price', 0),
             'change': round(((row.get('current_price', 0) - row.get('average price', 0)) / row.get('average price', 1)) * 100, 2) if row.get('average price', 0) else 0,
@@ -254,15 +272,107 @@ def create_risk_profile(df: pd.DataFrame, hist_data: list):
 
 def get_sector_analysis(df: pd.DataFrame):
     """Group by sector and sum current value for sector analysis."""
-    if 'Sector' in df and 'Current_Value' in df:
-        sector_dist = df.groupby('Sector')['Current_Value'].sum().reset_index()
-        sector_dist = sector_dist.rename(columns={'Current_Value': 'Current_Value', 'Sector': 'Sector'})
+    df = normalize_columns(df)
+    print("DEBUG: Columns after normalization:", df.columns.tolist())
+    print("DEBUG: First few rows:", df.head().to_dict())
+    quantity_col = get_first_column(df, ['quantity', 'quantity available'])
+    price_col = get_first_column(df, ['live price', 'previous closing price', 'previous closing price', 'current price', 'average price', 'avg price'])
+    # If current value is missing, compute it
+    if 'current value' not in df and quantity_col and price_col:
+        df['current value'] = df[quantity_col] * df[price_col]
+    # Only proceed if sector and current value exist
+    if 'sector' in df and 'current value' in df:
+        sector_dist = df.groupby('sector')['current value'].sum().reset_index()
+        sector_dist = sector_dist.rename(columns={'current value': 'Current_Value', 'sector': 'Sector'})
+        print("DEBUG: Sector data being returned:", sector_dist.to_dict(orient='records'))
         return sector_dist.to_dict(orient='records')
+    print("DEBUG: Sector or current value column missing, cannot compute sector allocation.")
     return []
 
 def get_news(df: pd.DataFrame):
     """Placeholder: no yfinance, no news fetching."""
     return {}
+
+def get_portfolio_metrics_history(df: pd.DataFrame) -> dict:
+    """Calculate portfolio metrics for multiple timeframes (last year, month, week, day, today), including top performer, top loser, and CAGR."""
+    logging.debug("Calculating portfolio metrics history for multiple timeframes.")
+    df = df.copy()
+    df.columns = [col.strip().lower() for col in df.columns]
+    if 'ticker' not in df.columns and 'stock symbol' in df.columns:
+        df['ticker'] = df['stock symbol']
+    timeframes = {
+        'last_year': (datetime.now() - timedelta(days=365)).strftime('%Y-%m-%d'),
+        'last_month': (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d'),
+        'last_week': (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d'),
+        'last_day': (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d'),
+        'today': datetime.now().strftime('%Y-%m-%d'),
+    }
+    invested_amount = float((df['quantity'] * df['average price']).sum())
+    results = {tf: {'total_value': 0.0, 'profit_loss': 0.0, 'change_percent': 0.0} for tf in timeframes}
+    top_performer = {tf: {'name': None, 'percent': float('-inf')} for tf in timeframes}
+    top_loser = {tf: {'name': None, 'percent': float('inf')} for tf in timeframes}
+    cagr = {tf: 0.0 for tf in timeframes}
+    for _, row in df.iterrows():
+        ticker = row.get('ticker')
+        quantity = row.get('quantity', 0)
+        avg_price = row.get('average price', 0)
+        if not ticker or quantity == 0 or avg_price == 0:
+            continue
+        symbol = ticker.replace('.NS', '') if isinstance(ticker, str) and ticker.endswith('.NS') else ticker
+        for tf, date_str in timeframes.items():
+            try:
+                resp = requests.get(f'http://localhost:3000/api/equity/historical/{symbol}?dateStart={date_str}&dateEnd={date_str}', timeout=10)
+                price = None
+                if resp.status_code == 200:
+                    data = resp.json()
+                    closes = []
+                    if isinstance(data, list):
+                        for chunk in data:
+                            closes += [float(d['CH_CLOSING_PRICE']) for d in chunk['data'] if 'CH_CLOSING_PRICE' in d]
+                    elif isinstance(data, dict) and 'data' in data:
+                        closes = [float(d['CH_CLOSING_PRICE']) for d in data['data'] if 'CH_CLOSING_PRICE' in d]
+                    if closes:
+                        price = closes[-1]
+                if price is not None:
+                    value = price * quantity
+                    results[tf]['total_value'] += value
+                    results[tf]['profit_loss'] += (price - avg_price) * quantity
+                    percent_return = ((price - avg_price) / avg_price) * 100
+                    if percent_return > top_performer[tf]['percent']:
+                        top_performer[tf] = {'name': str(ticker), 'percent': percent_return}
+                    if percent_return < top_loser[tf]['percent']:
+                        top_loser[tf] = {'name': str(ticker), 'percent': percent_return}
+                    # CAGR calculation (robust)
+                    try:
+                        years = max((datetime.now() - datetime.strptime(date_str, '%Y-%m-%d')).days / 365.25, 1e-6)
+                        if avg_price > 0 and years > 0 and price > 0:
+                            cagr_val = ((price / avg_price) ** (1 / years) - 1) * 100
+                            # Clamp to reasonable range
+                            if abs(cagr_val) < 1000:
+                                cagr[tf] = round(cagr_val, 2)
+                    except Exception as e:
+                        logging.error(f"CAGR calculation error for {symbol} on {date_str}: {e}")
+            except Exception as e:
+                logging.error(f"Error fetching historical price for {symbol} on {date_str}: {e}")
+                continue
+    for tf in timeframes:
+        if invested_amount > 0:
+            results[tf]['change_percent'] = (results[tf]['profit_loss'] / invested_amount) * 100
+        else:
+            results[tf]['change_percent'] = 0.0
+        if top_performer[tf]['name'] is None:
+            top_performer[tf] = {'name': None, 'percent': 0.0}
+        if top_loser[tf]['name'] is None:
+            top_loser[tf] = {'name': None, 'percent': 0.0}
+    return {
+        'total_value': {tf: results[tf]['total_value'] for tf in timeframes},
+        'profit_loss': {tf: results[tf]['profit_loss'] for tf in timeframes},
+        'change_percent': {tf: results[tf]['change_percent'] for tf in timeframes},
+        'invested_amount': invested_amount,
+        'top_performer': {tf: top_performer[tf] for tf in timeframes},
+        'top_loser': {tf: top_loser[tf] for tf in timeframes},
+        'cagr': cagr,
+    }
 
 # Expose all real business logic for import in main.py
 __all__ = [
@@ -273,4 +383,5 @@ __all__ = [
     'create_risk_profile',
     'get_news',
     'get_sector_analysis',
+    'get_portfolio_metrics_history',
 ]

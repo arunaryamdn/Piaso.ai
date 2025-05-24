@@ -189,7 +189,7 @@ const ProfilePage: React.FC = () => {
                                 </div>
                             </div>
                         </div>
-                        {/* Portfolio File Info */}
+                        {/* Portfolio File Info or Upload Prompt */}
                         {profile && portfolioStatus === 'failed' && (
                             <div className="bg-[#232837] rounded-2xl p-6 shadow-lg border border-[#53D22C]/10 mb-6 flex flex-col items-center">
                                 <div className="text-xl font-bold text-red-500 mb-2">Your previous upload failed.</div>
@@ -218,6 +218,14 @@ const ProfilePage: React.FC = () => {
                                 >
                                     Delete Portfolio
                                 </button>
+                            </div>
+                        )}
+                        {/* Show upload prompt if portfolioStatus is not_found */}
+                        {profile && portfolioStatus === 'not_found' && (
+                            <div className="bg-[#232837] rounded-2xl p-6 shadow-lg border border-[#53D22C]/10 mb-6 flex flex-col items-center">
+                                <h2 className="text-2xl font-bold text-[#7ecbff] mb-4">No portfolio uploaded yet.</h2>
+                                <div className="text-lg text-gray-300 mb-6 text-center">Upload your portfolio to get started.</div>
+                                <PortfolioUpload onUploadSuccess={handleUploadSuccess} />
                             </div>
                         )}
                     </>
