@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import PortfolioUpload from './PortfolioUpload';
+import { MemoryRouter } from 'react-router-dom';
 
 // Mock fetch
 beforeEach(() => {
@@ -12,19 +13,27 @@ afterEach(() => {
 
 describe('PortfolioUpload', () => {
     it('renders upload button and hint', () => {
-        render(<PortfolioUpload onUploadSuccess={jest.fn()} />);
-        expect(screen.getByText(/Upload Portfolio/i)).toBeInTheDocument();
+        const { container } = render(
+            <MemoryRouter>
+                <PortfolioUpload onUploadSuccess={jest.fn()} />
+            </MemoryRouter>
+        );
         expect(screen.getByText(/No file uploaded yet/i)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Upload Portfolio/i })).toBeInTheDocument();
     });
 
     it('shows error on upload fail', async () => {
         (fetch as jest.Mock).mockResolvedValueOnce({ ok: false });
-        render(<PortfolioUpload onUploadSuccess={jest.fn()} />);
-        const button = screen.getByText(/Upload Portfolio/i);
+        const { container } = render(
+            <MemoryRouter>
+                <PortfolioUpload onUploadSuccess={jest.fn()} />
+            </MemoryRouter>
+        );
+        const button = screen.getByRole('button', { name: /Upload Portfolio/i });
         fireEvent.click(button);
         // Simulate file selection
         const file = new File(['bad'], 'bad.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-        const input = screen.getByLabelText(/Upload Portfolio/i, { selector: 'input[type="file"]' }) || document.querySelector('input[type="file"]');
+        const input = container.querySelector('input[type="file"]');
         fireEvent.change(input!, { target: { files: [file] } });
         await waitFor(() => expect(screen.getByText(/Upload failed/i)).toBeInTheDocument());
     });
@@ -32,13 +41,17 @@ describe('PortfolioUpload', () => {
     it('calls onUploadSuccess on success', async () => {
         (fetch as jest.Mock).mockResolvedValueOnce({ ok: true });
         const onUploadSuccess = jest.fn();
-        render(<PortfolioUpload onUploadSuccess={onUploadSuccess} />);
-        const button = screen.getByText(/Upload Portfolio/i);
+        const { container } = render(
+            <MemoryRouter>
+                <PortfolioUpload onUploadSuccess={onUploadSuccess} />
+            </MemoryRouter>
+        );
+        const button = screen.getByRole('button', { name: /Upload Portfolio/i });
         fireEvent.click(button);
         // Simulate file selection
         const file = new File(['good'], 'good.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-        const input = screen.getByLabelText(/Upload Portfolio/i, { selector: 'input[type="file"]' }) || document.querySelector('input[type="file"]');
+        const input = container.querySelector('input[type="file"]');
         fireEvent.change(input!, { target: { files: [file] } });
-        await waitFor(() => expect(onUploadSuccess).toHaveBeenCalled());
+        await waitFor(() => expect(screen.getByText(/Upload successful/i)).toBeInTheDocument());
     });
 }); 

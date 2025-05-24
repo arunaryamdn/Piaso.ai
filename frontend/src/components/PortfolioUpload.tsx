@@ -1,7 +1,7 @@
 // PortfolioUpload.tsx
 // Portfolio upload component for Paiso.ai. Allows user to upload Excel file.
 
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import logo from '../assets/logo.png'; // Adjust path as needed
 import { UI_STRINGS } from '../config';
@@ -19,14 +19,56 @@ const PortfolioUpload: React.FC<PortfolioUploadProps> = ({ onUploadSuccess }) =>
   const [status, setStatus] = useState<'default' | 'success' | 'fail'>('default');
   const [uploading, setUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
+  const [processing, setProcessing] = useState(false);
+  const [processingMsg, setProcessingMsg] = useState('');
+  const [processingError, setProcessingError] = useState('');
+  const pollingRef = useRef<NodeJS.Timeout | null>(null);
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const pollStatus = () => {
+    setProcessing(true);
+    setProcessingMsg('Processing your portfolio... This may take a few moments.');
+    setProcessingError('');
+    pollingRef.current = setInterval(async () => {
+      try {
+        const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+        const res = await fetch('http://localhost:5000/api/portfolio/status', {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        const data = await res.json();
+        if (data.status === 'ready') {
+          setProcessing(false);
+          setProcessingMsg('Portfolio processed!');
+          clearInterval(pollingRef.current!);
+          onUploadSuccess();
+        } else if (data.status === 'failed') {
+          setProcessing(false);
+          setProcessingError('Portfolio processing failed. Please try again.');
+          clearInterval(pollingRef.current!);
+        }
+      } catch (err) {
+        setProcessing(false);
+        setProcessingError('Error checking processing status.');
+        clearInterval(pollingRef.current!);
+      }
+    }, 3000);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (pollingRef.current) clearInterval(pollingRef.current);
+    };
+  }, []);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
     setStatus('default');
+    setProcessing(false);
+    setProcessingMsg('');
+    setProcessingError('');
     try {
       const formData = new FormData();
       formData.append('file', file);
@@ -44,15 +86,16 @@ const PortfolioUpload: React.FC<PortfolioUploadProps> = ({ onUploadSuccess }) =>
       }
       setStatus('success');
       setFileName(file.name);
-      console.debug('[PortfolioUpload] Upload successful');
-      setTimeout(() => {
-        onUploadSuccess();
-      }, 800);
+      setUploading(false);
+      pollStatus();
+      console.debug('[PortfolioUpload] Upload successful, started polling for processing');
     } catch (err) {
       setStatus('fail');
-      console.error('[PortfolioUpload] Upload failed', err);
-    } finally {
       setUploading(false);
+      setProcessing(false);
+      setProcessingMsg('');
+      setProcessingError('');
+      console.error('[PortfolioUpload] Upload failed', err);
     }
   };
 
@@ -92,19 +135,28 @@ const PortfolioUpload: React.FC<PortfolioUploadProps> = ({ onUploadSuccess }) =>
         {status === 'success' && <span style={{ color: '#53d22c' }}>{UI_STRINGS.UPLOAD.STATUS_SUCCESS}</span>}
         {status === 'fail' && <span style={{ color: '#ff4d4f' }}>{UI_STRINGS.UPLOAD.STATUS_FAIL}</span>}
       </div>
+      {processing && (
+        <div style={{ color: '#53d22c', marginBottom: 12 }}>
+          <span className="spinner" style={{ marginRight: 8 }}>⏳</span>
+          {processingMsg}
+        </div>
+      )}
+      {processingError && (
+        <div style={{ color: '#ff4d4f', marginBottom: 12 }}>{processingError}</div>
+      )}
       <input
         type="file"
         accept=".xlsx,.xls"
         ref={fileInputRef}
         style={{ display: 'none' }}
         onChange={handleFileChange}
-        disabled={uploading}
+        disabled={uploading || processing}
       />
       <button
         className="upload-btn"
         style={{ background: '#53d22c', color: '#162013', border: 'none', borderRadius: 8, padding: '0.7rem 1.6rem', fontWeight: 700, fontSize: 16, cursor: 'pointer', marginTop: 8 }}
         onClick={() => fileInputRef.current?.click()}
-        disabled={uploading}
+        disabled={uploading || processing}
       >
         {uploading ? UI_STRINGS.GENERAL.LOADING : UI_STRINGS.UPLOAD.BTN}
       </button>

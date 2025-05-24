@@ -1,9 +1,6 @@
 export const fetchFromBackend = async (endpoint: string) => {
-  // Only call backend if portfolio is uploaded or endpoint is upload-portfolio
-  if (!window.sessionStorage.getItem('portfolioUploaded') && endpoint !== 'api/upload-portfolio') {
-    console.debug('Skipping backend call for', endpoint, 'because portfolio is not uploaded');
-    return null;
-  }
+  // Always allow backend calls. Do not block based on sessionStorage flag.
+  // The 'portfolioUploaded' flag can still be used for UI hints elsewhere if needed.
   console.debug('Fetching from backend:', endpoint);
   const token = localStorage.getItem('token') || sessionStorage.getItem('token');
   const response = await fetch(`http://localhost:5000/${endpoint}`, {

@@ -49,7 +49,7 @@ const Layout: React.FC = () => {
             <AnimatePresence mode="wait">
                 <motion.main
                     key={location.pathname}
-                    className="flex-1 ml-0 md:ml-64 px-4 sm:px-8 md:px-16 lg:px-24 xl:px-40 py-8 transition-all"
+                    className="flex-1 ml-0 md:ml-64 px-4 sm:px-8 md:px-12 lg:px-20 xl:px-32 py-10 max-w-6xl mx-auto w-full transition-all"
                     initial={{ opacity: 0, y: 24 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -24 }}

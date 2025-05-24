@@ -21,6 +21,7 @@ const ProfilePage: React.FC = () => {
     const [saving, setSaving] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [showUpload, setShowUpload] = useState(false);
+    const [portfolioStatus, setPortfolioStatus] = useState<'unknown' | 'processing' | 'ready' | 'failed' | 'not_found'>('unknown');
 
     const token = localStorage.getItem('token') || sessionStorage.getItem('token');
 
@@ -36,7 +37,13 @@ const ProfilePage: React.FC = () => {
             setProfile(data);
             setEditName(data.name || '');
             setEditMobile(data.mobile || '');
-            setShowUpload(!data.portfolio_file);
+            // Fetch portfolio status
+            const statusRes = await fetch(`${API_BASE}/api/portfolio/status`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            const statusData = await statusRes.json();
+            setPortfolioStatus(statusData.status);
+            setShowUpload(!data.portfolio_file || statusData.status === 'failed');
         } catch (err: any) {
             setError(err.message);
         } finally {
@@ -104,9 +111,10 @@ const ProfilePage: React.FC = () => {
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#101c13] to-[#1a232d] py-8 px-2">
             <div className="w-full max-w-2xl mx-auto bg-[#18251a] rounded-3xl shadow-2xl p-8 md:p-12 flex flex-col gap-8 border border-[#53D22C]/20">
                 <h1 className="text-3xl md:text-4xl font-bold text-center text-[#53D22C] mb-2 tracking-tight">My Profile</h1>
+                <h2 className="text-lg font-semibold text-[#7ecbff] mb-6 text-center">Manage your account and portfolio details.</h2>
                 {loading ? (
                     <div className="text-center text-lg text-gray-300">Loading...</div>
-                ) : error ? (
+                ) : error && !profile ? (
                     <div className="text-center text-red-500">{error}</div>
                 ) : profile ? (
                     <>
@@ -124,7 +132,7 @@ const ProfilePage: React.FC = () => {
                             <div className="flex-1 flex flex-col gap-2">
                                 <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
                                     <span className="font-semibold text-[#53D22C]">Email:</span>
-                                    <span className="text-white/90">{profile.email}</span>
+                                    <span className="text-white/90">{profile.email || <span className="italic text-gray-400">Not set</span>}</span>
                                 </div>
                                 <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
                                     <span className="font-semibold text-[#53D22C]">Name:</span>
@@ -182,49 +190,36 @@ const ProfilePage: React.FC = () => {
                             </div>
                         </div>
                         {/* Portfolio File Info */}
-                        <div className="mt-6 bg-[#232837] rounded-2xl p-6 shadow-lg border border-[#53D22C]/10">
-                            <h2 className="text-xl font-bold text-[#53D22C] mb-3">Portfolio File</h2>
-                            {profile.portfolio_file ? (
-                                <>
-                                    <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-6 mb-2">
-                                        <span className="font-semibold text-white/80">File Name:</span>
-                                        <span className="text-[#7ecbff]">{profile.portfolio_file.filename}</span>
-                                    </div>
-                                    <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-6 mb-2">
-                                        <span className="font-semibold text-white/80">Size:</span>
-                                        <span className="text-[#7ecbff]">{(profile.portfolio_file.filesize / 1024).toFixed(1)} KB</span>
-                                    </div>
-                                    <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-6 mb-4">
-                                        <span className="font-semibold text-white/80">Uploaded:</span>
-                                        <span className="text-[#7ecbff]">{profile.portfolio_file.uploaded_at?.slice(0, 19).replace('T', ' ')}</span>
-                                    </div>
-                                    <div className="flex gap-4">
-                                        <button
-                                            className="bg-red-500 hover:bg-red-600 text-white font-semibold px-4 py-1.5 rounded-lg shadow transition-all duration-150"
-                                            onClick={handleDeletePortfolio}
-                                            disabled={loading}
-                                        >
-                                            Delete Portfolio
-                                        </button>
-                                        <button
-                                            className="bg-[#53D22C] hover:bg-[#3fa31e] text-white font-semibold px-4 py-1.5 rounded-lg shadow transition-all duration-150"
-                                            onClick={() => setShowUpload(true)}
-                                            disabled={uploading}
-                                        >
-                                            Upload New Portfolio
-                                        </button>
-                                    </div>
-                                    {showUpload && (
-                                        <div className="mt-4"><PortfolioUpload onUploadSuccess={handleUploadSuccess} /></div>
-                                    )}
-                                </>
-                            ) : (
-                                <div className="flex flex-col items-center gap-2">
-                                    <div className="text-gray-400 italic mb-2">No portfolio file uploaded yet.</div>
-                                    <PortfolioUpload onUploadSuccess={handleUploadSuccess} />
+                        {profile && portfolioStatus === 'failed' && (
+                            <div className="bg-[#232837] rounded-2xl p-6 shadow-lg border border-[#53D22C]/10 mb-6 flex flex-col items-center">
+                                <div className="text-xl font-bold text-red-500 mb-2">Your previous upload failed.</div>
+                                <div className="text-gray-300 mb-4">Please upload a new portfolio file to continue.</div>
+                                <PortfolioUpload onUploadSuccess={handleUploadSuccess} />
+                            </div>
+                        )}
+                        {profile && portfolioStatus !== 'failed' && profile.portfolio_file && (
+                            <div className="mt-6 bg-[#232837] rounded-2xl p-6 shadow-lg border border-[#53D22C]/10">
+                                <h2 className="text-xl font-bold text-[#53D22C] mb-3">Portfolio File</h2>
+                                <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-6 mb-2">
+                                    <span className="font-semibold text-white/80">File Name:</span>
+                                    <span className="text-[#7ecbff]">{profile.portfolio_file.filename}</span>
                                 </div>
-                            )}
-                        </div>
+                                <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-6 mb-2">
+                                    <span className="font-semibold text-white/80">Size:</span>
+                                    <span className="text-[#7ecbff]">{(profile.portfolio_file.filesize / 1024).toFixed(1)} KB</span>
+                                </div>
+                                <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-6 mb-4">
+                                    <span className="font-semibold text-white/80">Uploaded:</span>
+                                    <span className="text-[#7ecbff]">{profile.portfolio_file.uploaded_at?.slice(0, 19).replace('T', ' ')}</span>
+                                </div>
+                                <button
+                                    className="bg-red-600 hover:bg-red-700 text-white rounded-lg px-5 py-2 font-bold shadow transition-all"
+                                    onClick={handleDeletePortfolio}
+                                >
+                                    Delete Portfolio
+                                </button>
+                            </div>
+                        )}
                     </>
                 ) : null}
             </div>

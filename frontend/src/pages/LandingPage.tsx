@@ -38,26 +38,27 @@ const features = [
 const LandingPage: React.FC = () => (
     <div className="min-h-screen bg-[#162013] text-white flex flex-col font-sans">
         {/* Top bar with login/signup */}
+        {/* DO NOT REMOVE: Login and Sign Up buttons must always be visible for unauthenticated users */}
         {!isAuthenticated() && (
-            <div className="w-full flex justify-end items-center px-8 py-4 gap-4">
+            <div className="w-full flex justify-end items-center px-8 py-6 gap-6 bg-[#101c13] shadow-lg">
                 <Link to="/login">
-                    <button className="bg-[#232837] hover:bg-[#53D22C] text-[#53D22C] hover:text-[#162013] font-bold px-6 py-2 rounded-lg text-base shadow transition-colors">Login</button>
+                    <button className="bg-[#232837] hover:bg-[#53D22C] text-[#53D22C] hover:text-[#162013] font-bold px-8 py-3 rounded-xl text-lg shadow transition-colors border-2 border-[#53D22C]">Login</button>
                 </Link>
                 <Link to="/signup">
-                    <button className="bg-[#53D22C] hover:bg-[#70e048] text-[#162013] font-bold px-6 py-2 rounded-lg text-base shadow transition-colors">Sign Up</button>
+                    <button className="bg-[#53D22C] hover:bg-[#70e048] text-[#162013] font-bold px-8 py-3 rounded-xl text-lg shadow transition-colors border-2 border-[#53D22C]">Sign Up</button>
                 </Link>
             </div>
         )}
 
         {/* Hero Section */}
-        <section className="flex flex-col items-center justify-center py-16 px-4">
-            <img src={logo} alt="Paiso.ai Logo" className="h-16 w-16 rounded-full bg-white p-2 mb-4" />
-            <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-2 tracking-tight">Paiso.ai</h1>
-            <p className="text-lg md:text-2xl text-[#A2C398] mb-6 text-center max-w-2xl">
+        <section className="flex flex-col items-center justify-center py-20 px-4 bg-[#162013] border-b-2 border-[#53D22C]/20">
+            <img src={logo} alt="Paiso.ai Logo" className="h-24 w-24 rounded-full bg-white p-2 mb-6 border-4 border-[#53D22C] shadow-xl" />
+            <h1 className="text-5xl md:text-6xl font-extrabold text-white mb-4 tracking-tight drop-shadow-lg">Paiso.ai</h1>
+            <p className="text-xl md:text-2xl text-[#A2C398] mb-8 text-center max-w-2xl font-medium">
                 Smarter investing starts here. Analyze, optimize, and grow your wealth with AI-driven insights.
             </p>
             <Link to="/login">
-                <button className="bg-[#53D22C] hover:bg-[#70e048] text-[#162013] font-bold px-8 py-3 rounded-full text-lg shadow-lg transition-colors">
+                <button className="bg-[#53D22C] hover:bg-[#70e048] text-[#162013] font-bold px-10 py-4 rounded-full text-2xl shadow-2xl transition-colors border-2 border-[#53D22C]">
                     Get Started
                 </button>
             </Link>

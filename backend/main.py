@@ -115,15 +115,20 @@ def init_db():
         data TEXT NOT NULL,
         filename TEXT,
         filesize INTEGER,
-        uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        status TEXT DEFAULT "ready" -- new status column
     )''')
-    # Migration: add filename and filesize columns if missing
+    # Migration: add filename, filesize, and status columns if missing
     try:
         c.execute('ALTER TABLE portfolios ADD COLUMN filename TEXT')
     except Exception:
         pass
     try:
         c.execute('ALTER TABLE portfolios ADD COLUMN filesize INTEGER')
+    except Exception:
+        pass
+    try:
+        c.execute('ALTER TABLE portfolios ADD COLUMN status TEXT DEFAULT "ready"')
     except Exception:
         pass
     conn.commit()
@@ -153,6 +158,50 @@ REQUIRED_COLUMNS = [
 ]
 MAX_UPLOAD_SIZE = 2 * 1024 * 1024  # 2MB
 MAX_DAYS = 3650  # 10 years
+
+def process_portfolio_async(user_id, df):
+    try:
+        # Ensure 'ticker' column exists
+        if 'ticker' not in df.columns:
+            if 'stock symbol' in df.columns:
+                df['ticker'] = df['stock symbol']
+            elif 'symbol' in df.columns:
+                df['ticker'] = df['symbol']
+            else:
+                raise Exception("No 'ticker', 'stock symbol', or 'symbol' column found in uploaded file.")
+        # Fetch prices and analytics (simulate processing)
+        prices_df = fetch_realtime_prices(df)
+        prices_df = prices_df.rename(columns={
+            'Ticker': 'ticker',
+            'Live_Price': 'live_price',
+            'Status': 'status',
+            'Source': 'source',
+            'Error': 'error'
+        })
+        # Only merge columns that exist in prices_df
+        merge_cols = [col for col in ['ticker', 'live_price', 'status', 'source', 'error'] if col in prices_df.columns]
+        df = pd.merge(
+            df,
+            prices_df[merge_cols],
+            on='ticker',
+            how='left'
+        )
+        # Save processed data and set status to 'ready'
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+        c.execute('UPDATE portfolios SET data = ?, status = ? WHERE user_id = ?',
+                  (df.to_json(orient='records'), 'ready', user_id))
+        conn.commit()
+        conn.close()
+        logging.info(f"{LOG_PREFIX} Portfolio processing complete for user_id={user_id}")
+    except Exception as e:
+        # On error, set status to 'failed'
+        logging.error(f"{LOG_PREFIX} Portfolio processing failed for user_id={user_id}: {e}")
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+        c.execute('UPDATE portfolios SET status = ? WHERE user_id = ?', ('failed', user_id))
+        conn.commit()
+        conn.close()
 
 @app.post('/api/upload-portfolio')
 async def upload_portfolio(file: UploadFile = File(...), user_id: int = Depends(get_user_id_from_token)):
@@ -189,34 +238,19 @@ async def upload_portfolio(file: UploadFile = File(...), user_id: int = Depends(
     except Exception as e:
         logging.error(f"{LOG_PREFIX} Error reading Excel file: {e}")
         raise HTTPException(status_code=400, detail="Invalid Excel file. Please check your file format.")
-    # --- Business logic (unchanged) ---
+    # --- Store initial record with status 'processing' and empty data ---
     try:
-        if 'ticker' not in df.columns and 'stock symbol' in df.columns:
-            df = df.rename(columns={'stock symbol': 'ticker'})
-        prices_df = fetch_realtime_prices(df)
-        prices_df = prices_df.rename(columns={
-            'Ticker': 'ticker',
-            'Live_Price': 'live_price',
-            'Status': 'status',
-            'Source': 'source',
-            'Error': 'error'
-        })
-        df = pd.merge(
-            df,
-            prices_df[['ticker', 'live_price', 'status', 'source', 'error']],
-            on='ticker',
-            how='left'
-        )
-        # Store as JSON in SQLite
         conn = sqlite3.connect(DB_PATH)
         c = conn.cursor()
         c.execute('DELETE FROM portfolios WHERE user_id = ?', (user_id,))  # Only one portfolio per user
-        c.execute('INSERT INTO portfolios (user_id, data, filename, filesize) VALUES (?, ?, ?, ?)',
-                  (user_id, df.to_json(orient='records'), file.filename, len(contents)))
+        c.execute('INSERT INTO portfolios (user_id, data, filename, filesize, status) VALUES (?, ?, ?, ?, ?)',
+                  (user_id, '[]', file.filename, len(contents), 'processing'))
         conn.commit()
         conn.close()
+        # Start background processing
+        threading.Thread(target=process_portfolio_async, args=(user_id, df)).start()
         preview = df.head().replace([np.inf, -np.inf], np.nan).fillna(0).to_dict(orient="records")
-        logging.info(f"{LOG_PREFIX} Portfolio uploaded for user_id={user_id}")
+        logging.info(f"{LOG_PREFIX} Portfolio uploaded and processing started for user_id={user_id}")
         return {"preview": preview, "message": MSG_UPLOAD_SUCCESS}
     except Exception as e:
         logging.error(f"{LOG_PREFIX} Upload failed for user_id={user_id}: {e}")
@@ -232,11 +266,17 @@ def get_portfolio(user_id: int = Depends(get_user_id_from_token)):
         c.execute('SELECT data FROM portfolios WHERE user_id = ?', (user_id,))
         row = c.fetchone()
         conn.close()
-        if not row:
+        if not row or not row[0]:
             logging.warning(f"{LOG_PREFIX} {MSG_NO_PORTFOLIO} for user_id={user_id}")
             raise HTTPException(status_code=404, detail=MSG_NO_PORTFOLIO)
-        data = json.loads(row[0])
+        try:
+            data = json.loads(row[0])
+        except Exception as e:
+            logging.error(f"{LOG_PREFIX} Malformed portfolio data for user_id={user_id}: {e}")
+            raise HTTPException(status_code=404, detail=MSG_NO_PORTFOLIO)
         return data
+    except HTTPException:
+        raise
     except Exception as e:
         logging.error(f"{LOG_PREFIX} Error fetching portfolio for user_id={user_id}: {e}")
         raise HTTPException(status_code=500, detail=MSG_INTERNAL_ERROR)
@@ -274,6 +314,8 @@ def get_dashboard(user_id: int = Depends(get_user_id_from_token)):
         metrics = calculate_portfolio_metrics(df)
         logging.info(f"{LOG_PREFIX} Dashboard metrics calculated for user_id={user_id}")
         return metrics
+    except HTTPException:
+        raise
     except Exception as e:
         logging.error(f"{LOG_PREFIX} Error calculating dashboard for user_id={user_id}: {e}")
         raise HTTPException(status_code=500, detail=MSG_INTERNAL_ERROR)
@@ -347,6 +389,8 @@ def historical_performance(days: int = 30, user_id: int = Depends(get_user_id_fr
         data = get_historical_performance(df, days=days)
         logging.info(f"{LOG_PREFIX} Historical performance calculated for user_id={user_id}")
         return data
+    except HTTPException:
+        raise
     except Exception as e:
         logging.error(f"{LOG_PREFIX} Error calculating historical performance for user_id={user_id}: {e}")
         raise HTTPException(status_code=500, detail=MSG_INTERNAL_ERROR)
@@ -466,10 +510,23 @@ def get_full_profile(request: Request, user_id: int = Depends(get_user_id_from_t
         portfolio_file = None
         if row:
             portfolio_file = {"filename": row[0], "filesize": row[1], "uploaded_at": row[2]}
-        return {"user": user_info, "portfolio_file": portfolio_file}
+        # Flatten user_info into top-level response
+        response = {**user_info, "portfolio_file": portfolio_file}
+        return response
     except Exception as e:
         logging.error(f"{LOG_PREFIX} Error aggregating profile: {e}")
         raise HTTPException(status_code=500, detail=MSG_INTERNAL_ERROR)
+
+@app.get('/api/portfolio/status')
+def get_portfolio_status(user_id: int = Depends(get_user_id_from_token)):
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute('SELECT status FROM portfolios WHERE user_id = ?', (user_id,))
+    row = c.fetchone()
+    conn.close()
+    if not row:
+        return {'status': 'not_found'}
+    return {'status': row[0]}
 
 if __name__ == '__main__':
     import uvicorn

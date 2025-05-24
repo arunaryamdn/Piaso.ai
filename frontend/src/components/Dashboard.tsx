@@ -15,12 +15,30 @@ const Dashboard: React.FC = () => {
   const [historical, setHistorical] = useState<any[]>([]);
   const [historicalLoading, setHistoricalLoading] = useState(true);
   const [historicalError, setHistoricalError] = useState<string | null>(null);
+  const [portfolioStatus, setPortfolioStatus] = useState<'unknown' | 'processing' | 'ready' | 'failed' | 'not_found'>('unknown');
 
   useEffect(() => {
     fetchFromBackend('api/historical')
       .then((res) => setHistorical(res || []))
       .catch((err) => setHistoricalError(err.message))
       .finally(() => setHistoricalLoading(false));
+  }, []);
+
+  useEffect(() => {
+    // Fetch portfolio status on mount
+    const fetchStatus = async () => {
+      try {
+        const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+        const res = await fetch('http://localhost:5000/api/portfolio/status', {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        const data = await res.json();
+        setPortfolioStatus(data.status);
+      } catch {
+        setPortfolioStatus('failed');
+      }
+    };
+    fetchStatus();
   }, []);
 
   // Asset allocation: expects { Stocks: 60, MutualFunds: 25, Bonds: 15, ... }
@@ -67,6 +85,12 @@ const Dashboard: React.FC = () => {
           <div>Loading dashboard...</div>
         ) : error ? (
           <div className="text-red-500">Error: {error}</div>
+        ) : portfolioStatus === 'failed' ? (
+          <div className="flex flex-col items-center justify-center min-h-[40vh] mt-4 mb-6">
+            <div className="text-2xl font-bold text-red-500 mb-4">Portfolio processing failed.</div>
+            <div className="text-lg text-gray-300 mb-6">Please upload a new portfolio file to continue.</div>
+            <PortfolioUpload onUploadSuccess={() => setReloadCount(c => c + 1)} />
+          </div>
         ) : isEmpty ? (
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}

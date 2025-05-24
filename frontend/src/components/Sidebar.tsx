@@ -42,7 +42,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onClose }) => {
                 onClick={onClose}
             />
             <motion.aside
-                className={`fixed left-0 top-0 z-50 h-screen w-64 bg-[#1A2615] flex flex-col justify-between shadow-xl transform transition-transform duration-300
+                className={`sticky top-0 left-0 z-50 h-screen w-64 bg-[#1A2615] flex flex-col justify-between shadow-xl transform transition-transform duration-300
                   ${open ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 md:static md:block`}
                 initial={{ x: -260, opacity: 0 }}
                 animate={{ x: open ? 0 : -260, opacity: open ? 1 : 0 }}
@@ -50,8 +50,8 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onClose }) => {
             >
                 <div>
                     <div className="flex items-center gap-3 px-6 py-8">
-                        <img src={logo} alt="Paiso.ai Logo" className="h-10 w-10 rounded-full bg-white p-1" />
-                        <span className="text-2xl font-extrabold text-[#53D22C] tracking-tight">Paiso.ai</span>
+                        <img src={logo} alt="Paiso.ai Logo" className="h-16 w-16 rounded-full bg-white p-2 border-4 border-[#53D22C] shadow-xl" />
+                        <span className="text-3xl font-extrabold text-[#53D22C] tracking-tight drop-shadow-lg">Paiso.ai</span>
                         {/* Close button for mobile */}
                         <motion.button
                             className="ml-auto md:hidden text-gray-400 hover:text-white text-2xl focus:outline-none"
@@ -85,14 +85,14 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onClose }) => {
                         ))}
                     </nav>
                 </div>
-                <div className="flex flex-col items-center gap-4 mb-8">
-                    <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full w-12 h-12 border-2 border-[#53D22C] shadow-md" style={{ backgroundImage: 'url("https://randomuser.me/api/portraits/men/32.jpg")' }} title="Profile"></div>
+                <div className="flex flex-col items-center gap-6 mb-10">
+                    <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full w-16 h-16 border-4 border-[#53D22C] shadow-lg" style={{ backgroundImage: 'url("https://randomuser.me/api/portraits/men/32.jpg")' }} title="Profile"></div>
                     <button
                         onClick={handleLogout}
-                        className="flex items-center justify-center w-12 h-12 rounded-full bg-[#232837] hover:bg-[#53D22C] text-[#53D22C] hover:text-[#162013] transition-colors shadow-md"
+                        className="flex items-center justify-center w-14 h-14 rounded-full bg-[#232837] hover:bg-[#53D22C] text-[#53D22C] hover:text-[#162013] transition-colors shadow-lg border-2 border-[#53D22C]"
                         title={UI_STRINGS.NAV.LOGOUT}
                     >
-                        <span className="material-icons text-2xl">power_settings_new</span>
+                        <span className="material-icons text-3xl">power_settings_new</span>
                     </button>
                 </div>
                 <motion.button
