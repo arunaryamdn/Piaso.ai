@@ -73,6 +73,15 @@ export const UI_STRINGS = {
         LOGOUT_BTN: 'Logout',
         ERROR: 'Invalid credentials.',
     },
+    API: {
+        NETWORK_ERROR: 'Network error - please check your connection',
+        TIMEOUT_ERROR: 'Request timed out - please try again',
+        UNAUTHORIZED: 'Session expired - please log in again',
+        FORBIDDEN: 'Access denied - insufficient permissions',
+        NOT_FOUND: 'Resource not found',
+        RATE_LIMITED: 'Too many requests - please wait before trying again',
+        UNKNOWN_ERROR: 'An unexpected error occurred',
+    },
     GENERAL: {
         LOADING: 'Loading...',
         ERROR: 'An error occurred. Please try again.',

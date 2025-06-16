@@ -233,36 +233,36 @@ const LandingPage: React.FC = () => {
     const logoControls = useAnimation();
 
     return (
-        <div className="min-h-screen w-full font-sans relative overflow-x-hidden">
+        <div className="w-full font-sans relative">
             {/* Animated gradient background */}
             <AnimatedGradient />
             {/* Glassmorphism container */}
-            <div className="flex flex-col min-h-screen">
+            <div className="flex flex-col">
                 {/* Top bar */}
                 <motion.div
-                    className="w-full flex items-center justify-between px-8 py-6 bg-white/10 backdrop-blur-lg shadow-lg"
+                    className="w-full flex items-center justify-between px-4 py-4 bg-white/10 backdrop-blur-lg shadow-lg"
                     initial="hidden"
                     animate="visible"
                     variants={fadeUp}
                 >
                     {/* Branding on the left */}
-                    <Link to="/" className="flex items-center gap-3 group">
+                    <Link to="/" className="flex items-center gap-2 group">
                         <img src={logo} alt="paiso.ai logo" className="h-10 w-10 rounded-full bg-white p-1 border-2 border-[#53D22C] shadow" />
-                        <span className="font-extrabold text-2xl text-white lowercase tracking-tight group-hover:text-[#53D22C] transition">paiso.ai</span>
+                        <span className="font-extrabold text-xl text-white lowercase tracking-tight group-hover:text-[#53D22C] transition">paiso.ai</span>
                     </Link>
                     {/* Auth buttons on the right */}
-                    <div className="flex gap-6">
+                    <div className="flex gap-4">
                         <Link to="/login">
-                            <button className="bg-transparent hover:bg-[#53D22C]/80 text-[#53D22C] hover:text-[#162013] font-bold px-8 py-3 rounded-xl text-lg shadow transition-colors border-2 border-[#53D22C] backdrop-blur-lg">login</button>
+                            <button className="bg-transparent hover:bg-[#53D22C]/80 text-[#53D22C] hover:text-[#162013] font-bold px-6 py-2 rounded-xl text-base shadow transition-colors border-2 border-[#53D22C] backdrop-blur-lg">login</button>
                         </Link>
                         <Link to="/signup">
-                            <button className="bg-[#53D22C]/90 hover:bg-[#70e048] text-[#162013] font-bold px-8 py-3 rounded-xl text-lg shadow transition-colors border-2 border-[#53D22C] backdrop-blur-lg">sign up</button>
+                            <button className="bg-[#53D22C]/90 hover:bg-[#70e048] text-[#162013] font-bold px-6 py-2 rounded-xl text-base shadow transition-colors border-2 border-[#53D22C] backdrop-blur-lg">sign up</button>
                         </Link>
                     </div>
                 </motion.div>
                 {/* Hero Section */}
                 <motion.section
-                    className="flex flex-col items-center justify-center py-24 px-4 bg-transparent"
+                    className="flex flex-col items-center justify-center py-8 px-2 bg-transparent"
                     initial="hidden"
                     animate="visible"
                     variants={fadeUp}
@@ -270,21 +270,21 @@ const LandingPage: React.FC = () => {
                     <motion.img
                         src={logo}
                         alt="paiso.ai logo"
-                        className="h-28 w-28 rounded-full bg-white p-2 mb-8 border-4 border-[#53D22C] shadow-2xl cursor-pointer"
+                        className="h-16 w-16 rounded-full bg-white p-2 mb-6 border-4 border-[#53D22C] shadow-2xl cursor-pointer"
                         variants={fadeUp}
                         custom={1}
                         whileHover={{ scale: 1.08, rotate: [0, 6, -6, 0] }}
-                        transition={{ type: 'spring', stiffness: 300, damping: 15 }}
+                        transition={{ type: 'tween', duration: 0.5 }}
                     />
-                    <motion.h1 className="text-6xl md:text-7xl font-extrabold text-white mb-4 tracking-tight drop-shadow-lg lowercase" variants={fadeUp} custom={2}>
+                    <motion.h1 className="text-3xl md:text-4xl font-extrabold text-white mb-2 tracking-tight drop-shadow-lg lowercase" variants={fadeUp} custom={2}>
                         <StaggeredText text="paiso.ai" />
                     </motion.h1>
-                    <motion.p className="text-2xl md:text-3xl text-[#A2C398] mb-10 text-center max-w-2xl font-medium" variants={fadeUp} custom={3}>
+                    <motion.p className="text-lg md:text-xl text-[#A2C398] mb-6 text-center max-w-2xl font-medium" variants={fadeUp} custom={3}>
                         smarter investing starts here. analyze, optimize, and grow your wealth with ai-driven insights.
                     </motion.p>
                     <motion.div variants={fadeUp} custom={4}>
                         <Link to="/login">
-                            <RippleButton className="bg-[#53D22C]/90 hover:bg-[#70e048] text-[#162013] font-bold px-12 py-5 rounded-full text-2xl shadow-2xl transition-all border-2 border-[#53D22C] backdrop-blur-lg hover:scale-105 active:scale-95 duration-150">
+                            <RippleButton className="bg-[#53D22C]/90 hover:bg-[#70e048] text-[#162013] font-bold px-6 py-2 rounded-full text-lg shadow-2xl transition-all border-2 border-[#53D22C] backdrop-blur-lg hover:scale-105 active:scale-95 duration-150">
                                 get started
                             </RippleButton>
                         </Link>
@@ -293,18 +293,18 @@ const LandingPage: React.FC = () => {
                 {/* Features Section */}
                 <motion.section
                     id="features"
-                    className="py-16 px-4 bg-transparent"
+                    className="py-6 px-2 bg-transparent"
                     initial="hidden"
                     whileInView="visible"
                     viewport={{ once: true, amount: 0.2 }}
                     variants={fadeUp}
                 >
-                    <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+                    <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         {features.map((f, i) => (
                             <motion.div
                                 key={i}
                                 ref={cardRefs[i]}
-                                className="backdrop-blur-lg bg-white/10 border border-white/20 rounded-2xl p-8 shadow-2xl flex flex-col items-center text-center transition-transform hover:scale-105 duration-150 cursor-pointer"
+                                className="backdrop-blur-lg bg-white/10 border border-white/20 rounded-2xl p-4 shadow-2xl flex flex-col items-center text-center transition-transform hover:scale-105 duration-150 cursor-pointer"
                                 variants={fadeUp}
                                 custom={i + 1}
                                 whileHover={{ scale: 1.07 }}
@@ -315,28 +315,28 @@ const LandingPage: React.FC = () => {
                                 onMouseMove={tilts[i].handleMouseMove}
                                 onMouseLeave={tilts[i].handleMouseLeave}
                             >
-                                <motion.div className="mb-4" variants={iconPulse} animate="animate">
+                                <motion.div className="mb-2" variants={iconPulse} animate="animate">
                                     {FeatureIcons[i]}
                                 </motion.div>
-                                <h3 className="text-xl font-bold mb-2 text-[#53D22C] lowercase">{f.title}</h3>
-                                <p className="text-gray-200 text-base">{f.desc}</p>
+                                <h3 className="text-lg font-bold mb-1 text-[#53D22C] lowercase">{f.title}</h3>
+                                <p className="text-gray-200 text-sm">{f.desc}</p>
                             </motion.div>
                         ))}
                     </div>
                 </motion.section>
                 {/* Product Screenshot Section */}
                 <motion.section
-                    className="py-20 px-4 flex flex-col items-center bg-transparent"
+                    className="py-8 px-2 flex flex-col items-center bg-transparent"
                     initial="hidden"
                     whileInView="visible"
                     viewport={{ once: true, amount: 0.2 }}
                     variants={zoomIn}
                 >
-                    <h2 className="text-3xl md:text-4xl font-bold mb-8 text-white text-center drop-shadow-lg">see paiso.ai in action</h2>
+                    <h2 className="text-2xl md:text-3xl font-bold mb-4 text-white text-center drop-shadow-lg">see paiso.ai in action</h2>
                     <motion.img
                         src={landingImg}
                         alt="paiso.ai screenshot"
-                        className="rounded-3xl shadow-2xl w-full max-w-4xl border-4 border-[#2E4328]/40 backdrop-blur-lg"
+                        className="rounded-2xl shadow-2xl w-full max-w-2xl border-4 border-[#2E4328]/40 backdrop-blur-lg"
                         variants={floatY}
                         animate="animate"
                     />
@@ -345,15 +345,15 @@ const LandingPage: React.FC = () => {
                 <TestimonialSection />
                 {/* Call to Action */}
                 <motion.section
-                    className="py-12 flex flex-col items-center bg-transparent"
+                    className="py-6 flex flex-col items-center bg-transparent"
                     initial="hidden"
                     whileInView="visible"
                     viewport={{ once: true, amount: 0.2 }}
                     variants={fadeUp}
                 >
-                    <h3 className="text-2xl md:text-3xl font-bold mb-6 text-white text-center">ready to take control of your financial future?</h3>
+                    <h3 className="text-xl md:text-2xl font-bold mb-4 text-white text-center">ready to take control of your financial future?</h3>
                     <Link to="/login">
-                        <RippleButton className="bg-[#53D22C]/90 hover:bg-[#70e048] text-[#162013] font-bold px-10 py-4 rounded-full text-xl shadow-xl transition-all border-2 border-[#53D22C] backdrop-blur-lg hover:scale-105 active:scale-95 duration-150">
+                        <RippleButton className="bg-[#53D22C]/90 hover:bg-[#70e048] text-[#162013] font-bold px-6 py-2 rounded-full text-base shadow-xl transition-all border-2 border-[#53D22C] backdrop-blur-lg hover:scale-105 active:scale-95 duration-150">
                             get started
                         </RippleButton>
                     </Link>

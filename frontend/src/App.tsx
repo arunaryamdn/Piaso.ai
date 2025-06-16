@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import Dashboard from './components/Dashboard';
+import ErrorBoundary from './components/ErrorBoundary';
+import LoadingSkeleton from './components/LoadingSkeleton';
 import PortfolioTable from './components/PortfolioTable';
 import PortfolioUpload from './components/PortfolioUpload';
 import RealTimePrices from './components/RealTimePrices';
@@ -59,17 +60,17 @@ function AnimatedRoutes() {
       <Routes location={location} key={location.pathname}>
         {/* Public routes: no Layout */}
         <Route path="/" element={
-          <motion.div {...pageTransition} className="min-h-screen">
+          <motion.div {...pageTransition}>
             <LandingPage />
           </motion.div>
         } />
         <Route path="/login" element={
-          <motion.div {...pageTransition} className="min-h-screen">
+          <motion.div {...pageTransition}>
             <LoginPage />
           </motion.div>
         } />
         <Route path="/signup" element={
-          <motion.div {...pageTransition} className="min-h-screen">
+          <motion.div {...pageTransition}>
             <SignupPage />
           </motion.div>
         } />
@@ -99,7 +100,22 @@ function App() {
   const [showSessionModal, setShowSessionModal] = useState(false);
   const [countdown, setCountdown] = useState(60);
   const [refreshing, setRefreshing] = useState(false);
+  const [initialLoad, setInitialLoad] = useState(true);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    // Simulate initial load delay
+    const timer = setTimeout(() => setInitialLoad(false), 1500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (initialLoad) {
+    return (
+      <div className="app-loading">
+        <LoadingSkeleton type="card" width={300} height={100} count={3} />
+      </div>
+    );
+  }
 
   // Helper to get token and expiry
   function getTokenAndExpiry() {
@@ -188,20 +204,22 @@ function App() {
   }
 
   return (
-    <Router>
-      {/* Session Expiry Modal */}
-      {showSessionModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.45)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: '#232837', color: '#fff', borderRadius: 16, padding: 32, minWidth: 320, boxShadow: '0 4px 32px 0 rgba(40,255,80,0.10)' }}>
-            <h2 style={{ color: '#53d22c', fontWeight: 800, fontSize: '1.3rem', marginBottom: 12 }}>Session Expiring Soon</h2>
-            <p style={{ marginBottom: 16 }}>Your session will expire in <b>{countdown}</b> seconds.<br />Would you like to stay signed in?</p>
-            <button onClick={handleRefreshToken} disabled={refreshing} style={{ background: '#53d22c', color: '#181c24', fontWeight: 800, fontSize: '1.1rem', border: 'none', borderRadius: 12, padding: '0.7rem 2rem', marginRight: 12, cursor: 'pointer' }}>{refreshing ? 'Refreshing...' : 'Stay Signed In'}</button>
-            <button onClick={() => { setShowSessionModal(false); localStorage.removeItem('token'); sessionStorage.removeItem('token'); window.location.href = '/login'; }} style={{ background: '#232837', color: '#b5cbb0', fontWeight: 600, fontSize: '1.1rem', border: '1px solid #7ecbff', borderRadius: 12, padding: '0.7rem 2rem', cursor: 'pointer' }}>Logout</button>
+    <ErrorBoundary>
+      <Router>
+        {/* Session Expiry Modal */}
+        {showSessionModal && (
+          <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.45)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ background: '#232837', color: '#fff', borderRadius: 16, padding: 32, minWidth: 320, boxShadow: '0 4px 32px 0 rgba(40,255,80,0.10)' }}>
+              <h2 style={{ color: '#53d22c', fontWeight: 800, fontSize: '1.3rem', marginBottom: 12 }}>Session Expiring Soon</h2>
+              <p style={{ marginBottom: 16 }}>Your session will expire in <b>{countdown}</b> seconds.<br />Would you like to stay signed in?</p>
+              <button onClick={handleRefreshToken} disabled={refreshing} style={{ background: '#53d22c', color: '#181c24', fontWeight: 800, fontSize: '1.1rem', border: 'none', borderRadius: 12, padding: '0.7rem 2rem', marginRight: 12, cursor: 'pointer' }}>{refreshing ? 'Refreshing...' : 'Stay Signed In'}</button>
+              <button onClick={() => { setShowSessionModal(false); localStorage.removeItem('token'); sessionStorage.removeItem('token'); window.location.href = '/login'; }} style={{ background: '#232837', color: '#b5cbb0', fontWeight: 600, fontSize: '1.1rem', border: '1px solid #7ecbff', borderRadius: 12, padding: '0.7rem 2rem', cursor: 'pointer' }}>Logout</button>
+            </div>
           </div>
-        </div>
-      )}
-      <AnimatedRoutes />
-    </Router>
+        )}
+        <AnimatedRoutes />
+      </Router>
+    </ErrorBoundary>
   );
 }
 

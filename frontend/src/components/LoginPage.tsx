@@ -3,9 +3,10 @@
 
 import React, { useState, FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import LoadingSkeleton from './LoadingSkeleton';
+import { UI_STRINGS } from '../config';
 import { motion } from 'framer-motion';
 import logo from '../assets/logo.png';
-import { UI_STRINGS } from '../config';
 
 /**
  * Login page component. Allows user to sign in.
@@ -32,7 +33,7 @@ const LoginPage: React.FC = () => {
                 body: JSON.stringify({ email, password, sessionDuration })
             });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Login failed');
+            if (!res.ok) throw new Error(data.error || UI_STRINGS.AUTH.ERROR);
             if (rememberMe) {
                 localStorage.setItem('token', data.token);
                 sessionStorage.removeItem('token');
@@ -47,6 +48,8 @@ const LoginPage: React.FC = () => {
             setLoading(false);
         }
     };
+
+    if (loading) return <LoadingSkeleton type="card" width="100%" height={400} count={1} />;
 
     console.debug('[LoginPage] Rendered');
 

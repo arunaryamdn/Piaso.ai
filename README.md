@@ -52,17 +52,70 @@ Your Excel file should have at least these columns:
 Optional columns:
 - `Buy_Date`, `Alert_Price`, `Sector`, etc.
 
-## API Endpoints
-- `POST /api/upload-portfolio` — Upload Excel file
-- `GET /api/portfolio` — Get current portfolio
-- `POST /api/dashboard` — Get dashboard metrics
-- `POST /api/portfolio_table` — Get portfolio table (with search/filter)
-- `POST /api/sector_analysis` — Get sector distribution
-- `POST /api/realtime_prices` — Get real-time prices
-- `POST /api/ai_recommendations` — Get AI recommendations
-- `POST /api/news` — Get news for portfolio
-- `POST /api/historical` — Get historical performance
-- `POST /api/risk` — Get risk metrics
+## API Endpoints (Updated)
+
+| Endpoint                      | Method | Description                                 |
+|-------------------------------|--------|---------------------------------------------|
+| /api/upload-portfolio         | POST   | Upload portfolio Excel file                 |
+| /api/portfolio                | GET    | Get current portfolio                       |
+| /api/portfolio                | DELETE | Delete current portfolio                    |
+| /api/portfolio/status         | GET    | Get portfolio status                        |
+| /api/dashboard/analytics      | GET    | Get dashboard analytics                     |
+| /api/portfolio_table          | POST   | Get portfolio table with analytics          |
+| /api/historical               | GET    | Get historical performance                  |
+| /api/profile                  | GET    | Get user profile info                       |
+| /api/zerodha/exchange-token   | POST   | Exchange token for Zerodha integration      |
+| /api/mcp-chat                 | POST   | MCP chat (manual/testing only)              |
+| /api/news                     | GET    | (stub, always returns 404, to be removed)   |
+| /api/risk                     | GET    | (stub, always returns 404, to be removed)   |
+
+### Portfolio Management
+- `POST /api/upload-portfolio`  
+  Upload an Excel file.  
+  **Request:** `multipart/form-data` with `file`  
+  **Response:**
+  ```json
+  {
+    "preview": [{ "Stock": "TCS", "Quantity": 5, ... }],
+    "message": "Upload successful! Ready to analyze."
+  }
+  ```
+- `GET /api/portfolio`  
+  Get the current user's portfolio.  
+  **Response:**
+  ```json
+  [
+    { "ticker": "TCS", "quantity": 5, "average price": 3500, ... }
+  ]
+  ```
+- `DELETE /api/portfolio`  
+  Delete the current user's portfolio.
+- `GET /api/portfolio/status`  
+  Get the status of the user's portfolio (ready, processing, failed, not_found).
+
+### Analytics & Dashboard
+- `GET /api/dashboard/analytics`  
+  Get all dashboard analytics (metrics, sector, historical, holdings, news).
+- `POST /api/portfolio_table`  
+  Get a table of portfolio holdings with live prices and analytics.
+- `GET /api/historical?days=30`  
+  Get historical performance for the portfolio.
+
+### User Profile
+- `GET /api/profile`  
+  Get user profile info + portfolio file info.
+
+### Broker Integration
+- `POST /api/zerodha/exchange-token`  
+  Exchange a request token for a Zerodha session (for integration).
+
+### (Optional/Advanced)
+- `POST /api/mcp-chat`  
+  MCP chat integration (for manual/testing, not used by frontend).
+
+### Endpoints to Remove Soon
+- `GET /api/news` — (stub, always returns 404)
+- `GET /api/risk` — (stub, always returns 404)
 
 ## Development Notes
 - All business logic is in backend utility modules for maintainability.
@@ -166,120 +219,10 @@ Your Excel file should have at least these columns:
 
 ---
 
-## API Endpoints
-
-### Authentication
-
-- Paiso.ai expects a JWT token in the `Authorization` header for all protected endpoints.
-
-### Portfolio Management
-
-- `POST /api/upload-portfolio`  
-  Upload an Excel file.  
-  **Request:** `multipart/form-data` with `file`  
-  **Response:**  
-  ```json
-  {
-    "preview": [{ "Stock": "TCS", "Quantity": 5, ... }],
-    "message": "Upload successful! Ready to analyze."
-  }
-  ```
-
-- `GET /api/portfolio`  
-  Get the current user's portfolio.  
-  **Response:**  
-  ```json
-  [
-    { "ticker": "TCS", "quantity": 5, "average price": 3500, ... }
-  ]
-  ```
-
-- `DELETE /api/portfolio`  
-  Delete the current user's portfolio.
-
-- `GET /api/portfolio/status`  
-  Get processing status: `{"status": "ready"}`
-
-### Dashboard & Analytics
-
-- `POST /api/sector_analysis`  
-  Get sector allocation.  
-  **Request:**  
-  ```json
-  { "portfolio": [ ... ] } // Optional; if omitted, uses stored portfolio
-  ```
-  **Response:**  
-  ```json
-  [
-    { "Sector": "IT", "Current_Value": 50000 },
-    { "Sector": "ENERGY", "Current_Value": 25000 }
-  ]
-  ```
-
-- `POST /api/historical`  
-  Get historical performance.  
-  **Request:**  
-  ```json
-  { "portfolio": [ ... ], "days": 90 }
-  ```
-  **Response:**  
-  ```json
-  [
-    { "Date": "2024-04-01", "Portfolio_Value": 100000 },
-    { "Date": "2024-04-02", "Portfolio_Value": 100500 }
-  ]
-  ```
-
-- `POST /api/portfolio_table`  
-  Get stock-wise table for dashboard mini-cards.  
-  **Response:**  
-  ```json
-  {
-    "holdings": [
-      {
-        "symbol": "TCS",
-        "name": "TCS",
-        "quantity": 5,
-        "avg_price": 3500,
-        "ltp": 3700,
-        "change": 5.7,
-        "value": 18500
-      }
-    ]
-  }
-  ```
-
-- `GET /api/portfolio/metrics-history`  
-  Get summary metrics for all timeframes.  
-  **Response:**  
-  ```json
-  {
-    "total_value": { "last_year": 100000, ... },
-    "profit_loss": { "last_year": 15000, ... },
-    "change_percent": { "last_year": 15, ... },
-    "top_performer": { "last_year": { "name": "TCS", "percent": 22.5 }, ... },
-    "top_loser": { "last_year": { "name": "XYZ", "percent": -10.2 }, ... },
-    "cagr": { "last_year": 12.3, ... },
-    "invested_amount": 85000
-  }
-  ```
-
-- `POST /api/news`  
-  Get latest news for portfolio holdings.
-
-- `POST /api/ai_recommendations`  
-  Get AI-powered buy/hold/sell suggestions.
-
----
-
-## Frontend Integration
-
-- **All analytics sections** POST the current portfolio (or empty body) to the backend.
-- **Error Handling:** If the backend returns an error (e.g., no portfolio uploaded), the frontend displays a user-friendly message and a consistent skeleton loader.
-- **Dashboard Layout:**  
-  - 3x2 grid for summary cards (Total Value, Profit/Loss, Change, Top Performer, Top Loser, CAGR).
-  - Full-width Invested Amount card above.
-  - 3-column grid below for Sector Allocation (pie), Historical Performance (line), and Stock-wise Mini Cards (sparklines).
+## Testing Your Endpoints
+- Use FastAPI's `/docs` (Swagger UI) at `http://localhost:8000/docs` to interactively test all endpoints.
+- Use Postman or curl for manual testing.
+- Make sure to include the `Authorization: Bearer <token>` header for protected endpoints.
 
 ---
 

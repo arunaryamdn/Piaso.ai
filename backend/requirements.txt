@@ -1,4 +1,3 @@
-streamlit>=1.24.0
 pandas>=1.5.0
 plotly>=5.13.0
 yfinance>=0.2.18
@@ -9,7 +8,9 @@ requests>=2.31.0
 beautifulsoup4>=4.12.0
 nsepython>=1.0.0
 nsetools>=1.0.11
-altair>=5.0.0
 python-dotenv
 pytest
 httpx
+aiosqlite
+httpx[http2]
+async-lru

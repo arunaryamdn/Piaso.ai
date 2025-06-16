@@ -2,6 +2,9 @@
 console.log('SECTOR DEBUG: SectorAnalysis.tsx file loaded!');
 
 import React, { useEffect, useState } from 'react';
+import ErrorBoundary from './ErrorBoundary';
+import LoadingSkeleton from './LoadingSkeleton';
+import { UI_STRINGS } from '../config';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 const COLORS = [
@@ -41,9 +44,9 @@ const SectorAnalysis: React.FC = () => {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="rounded-2xl bg-[#1A2615]/80 p-6 shadow-xl w-full text-gray-400">Loading sector allocation...</div>;
-  if (error) return <div className="rounded-2xl bg-[#1A2615]/80 p-6 shadow-xl w-full text-red-500">{error}</div>;
-  if (!data.length) return <div className="rounded-2xl bg-[#1A2615]/80 p-6 shadow-xl w-full text-gray-400">No sector data available.</div>;
+  if (loading) return <LoadingSkeleton type="card" width="100%" height={200} count={1} />;
+  if (error) return <div className="error-message">{error}</div>;
+  if (!data.length) return <div>{UI_STRINGS.GENERAL.NO_DATA}</div>;
 
   // Normalize keys for frontend consistency
   const normalized = data.map((row: any) => ({
@@ -53,31 +56,34 @@ const SectorAnalysis: React.FC = () => {
   console.log('SECTOR DEBUG: Sector Pie Data:', normalized);
 
   return (
-    <div className="rounded-2xl bg-[#1A2615]/80 p-6 shadow-xl w-full">
-      <h2 className="text-lg font-bold mb-4 text-[#53d22c] flex items-center gap-2">
-        <span className="material-icons text-2xl align-middle">pie_chart</span>
-        Sector Allocation
-      </h2>
-      <ResponsiveContainer width="100%" height={320}>
-        <PieChart>
-          <Pie
-            data={normalized}
-            dataKey="current_value"
-            nameKey="sector"
-            cx="50%"
-            cy="50%"
-            outerRadius={110}
-            label={({ sector }) => sector}
-          >
-            {normalized.map((entry, idx) => (
-              <Cell key={`cell-${idx}`} fill={COLORS[idx % COLORS.length]} />
-            ))}
-          </Pie>
-          <Tooltip formatter={(value: number) => `₹${value.toLocaleString()}`} />
-          <Legend />
-        </PieChart>
-      </ResponsiveContainer>
-    </div>
+    <ErrorBoundary>
+      <div className="rounded-2xl bg-[#1A2615]/80 p-6 shadow-xl w-full">
+        <h2 className="text-lg font-bold mb-4 text-[#53d22c] flex items-center gap-2">
+          <span className="material-icons text-2xl align-middle">pie_chart</span>
+          Sector Allocation
+        </h2>
+        <ResponsiveContainer width="100%" height={400}>
+          <PieChart>
+            <Pie
+              data={normalized}
+              cx="50%"
+              cy="50%"
+              labelLine={false}
+              outerRadius={80}
+              fill="#8884d8"
+              dataKey="current_value"
+              nameKey="sector"
+            >
+              {normalized.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+              ))}
+            </Pie>
+            <Tooltip formatter={(value: number) => `₹${value.toLocaleString()}`} />
+            <Legend />
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
+    </ErrorBoundary>
   );
 };
 

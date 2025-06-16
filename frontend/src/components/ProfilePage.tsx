@@ -2,6 +2,8 @@
 // User profile page for Paiso.ai. Shows uploaded portfolio and upload/delete actions.
 
 import React, { useEffect, useState } from 'react';
+import ErrorBoundary from './ErrorBoundary';
+import LoadingSkeleton from './LoadingSkeleton';
 import PortfolioUpload from '../components/PortfolioUpload';
 import { UI_STRINGS } from '../config';
 
@@ -26,17 +28,16 @@ const ProfilePage: React.FC = () => {
     const token = localStorage.getItem('token') || sessionStorage.getItem('token');
 
     const fetchProfile = async () => {
-        setLoading(true);
-        setError('');
         try {
-            const res = await fetch(`${API_BASE}/api/profile`, {
+            setLoading(true);
+            const res = await fetch(`${AUTH_API_BASE}/api/profile`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
-            if (!res.ok) throw new Error('Failed to fetch profile');
             const data = await res.json();
+            if (!res.ok) throw new Error(data.message || 'Failed to fetch profile');
             setProfile(data);
-            setEditName(data.name || '');
-            setEditMobile(data.mobile || '');
+            setEditName(data.name);
+            setEditMobile(data.mobile);
             // Fetch portfolio status
             const statusRes = await fetch(`${API_BASE}/api/portfolio/status`, {
                 headers: { Authorization: `Bearer ${token}` },
@@ -51,10 +52,17 @@ const ProfilePage: React.FC = () => {
         }
     };
 
-    useEffect(() => {
-        fetchProfile();
-        // eslint-disable-next-line
-    }, []);
+    const checkPortfolioStatus = async () => {
+        try {
+            const res = await fetch(`${API_BASE}/api/portfolio/status`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            const data = await res.json();
+            setPortfolioStatus(data.status);
+        } catch {
+            setPortfolioStatus('failed');
+        }
+    };
 
     const handleEdit = () => {
         setEditName(profile?.name || '');
@@ -103,21 +111,55 @@ const ProfilePage: React.FC = () => {
     };
 
     const handleUploadSuccess = () => {
-        setUploading(false);
+        setShowUpload(false);
+        setPortfolioStatus('ready');
         fetchProfile();
     };
 
+    useEffect(() => {
+        fetchProfile();
+        checkPortfolioStatus();
+    }, [token]);
+
+    if (loading) {
+        return (
+            <div className="profile-loading">
+                <LoadingSkeleton type="card" width="100%" height={120} count={3} />
+            </div>
+        );
+    }
+
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#101c13] to-[#1a232d] py-8 px-2">
-            <div className="w-full max-w-2xl mx-auto bg-[#18251a] rounded-3xl shadow-2xl p-8 md:p-12 flex flex-col gap-8 border border-[#53D22C]/20">
-                <h1 className="text-3xl md:text-4xl font-bold text-center text-[#53D22C] mb-2 tracking-tight">My Profile</h1>
-                <h2 className="text-lg font-semibold text-[#7ecbff] mb-6 text-center">Manage your account and portfolio details.</h2>
-                {loading ? (
-                    <div className="text-center text-lg text-gray-300">Loading...</div>
-                ) : error && !profile ? (
-                    <div className="text-center text-red-500">{error}</div>
-                ) : profile ? (
-                    <>
+        <ErrorBoundary>
+            <div className="profile-container">
+                {error && (
+                    <div className="error-message">
+                        {error}
+                    </div>
+                )}
+
+                <div className="profile-header">
+                    <h2>{UI_STRINGS.PROFILE.TITLE}</h2>
+                    {portfolioStatus === 'not_found' && (
+                        <button
+                            onClick={() => setShowUpload(true)}
+                            className="upload-btn"
+                        >
+                            {UI_STRINGS.PROFILE.UPLOAD_PROMPT}
+                        </button>
+                    )}
+                </div>
+
+                {showUpload && (
+                    <div className="upload-section">
+                        <PortfolioUpload
+                            onUploadSuccess={handleUploadSuccess}
+                        />
+                    </div>
+                )}
+
+                {profile && (
+                    <div className="profile-details">
                         <div className="flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-10">
                             <div className="flex flex-col items-center gap-2">
                                 <div className="w-20 h-20 rounded-full bg-[#232837] flex items-center justify-center text-4xl font-bold text-[#53D22C] shadow-lg">
@@ -220,18 +262,10 @@ const ProfilePage: React.FC = () => {
                                 </button>
                             </div>
                         )}
-                        {/* Show upload prompt if portfolioStatus is not_found */}
-                        {profile && portfolioStatus === 'not_found' && (
-                            <div className="bg-[#232837] rounded-2xl p-6 shadow-lg border border-[#53D22C]/10 mb-6 flex flex-col items-center">
-                                <h2 className="text-2xl font-bold text-[#7ecbff] mb-4">No portfolio uploaded yet.</h2>
-                                <div className="text-lg text-gray-300 mb-6 text-center">Upload your portfolio to get started.</div>
-                                <PortfolioUpload onUploadSuccess={handleUploadSuccess} />
-                            </div>
-                        )}
-                    </>
-                ) : null}
+                    </div>
+                )}
             </div>
-        </div>
+        </ErrorBoundary>
     );
 };
 

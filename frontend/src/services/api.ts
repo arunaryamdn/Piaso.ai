@@ -1,16 +1,100 @@
-export const fetchFromBackend = async (endpoint: string) => {
-  // Always allow backend calls. Do not block based on sessionStorage flag.
-  // The 'portfolioUploaded' flag can still be used for UI hints elsewhere if needed.
-  console.debug('Fetching from backend:', endpoint);
-  const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-  const response = await fetch(`http://localhost:5000/${endpoint}`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-  });
-  if (!response.ok) {
-    console.error('Network response was not ok:', response.status, response.statusText);
-    throw new Error('Network response was not ok');
+import axios, { AxiosError, AxiosRequestConfig } from 'axios';
+import { UI_STRINGS } from '../config';
+
+type ApiResponse<T> = {
+  data?: T;
+  error?: {
+    message: string;
+    code?: number;
+    retryable?: boolean;
+  };
+};
+
+const API_TIMEOUT = 10000; // 10 seconds
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000; // 1 second initial delay
+
+async function fetchWithRetry<T>(
+  endpoint: string,
+  config?: AxiosRequestConfig,
+  retries = MAX_RETRIES
+): Promise<ApiResponse<T>> {
+  try {
+    const source = axios.CancelToken.source();
+    const timeout = setTimeout(() => {
+      source.cancel(`Request timeout after ${API_TIMEOUT}ms`);
+    }, API_TIMEOUT);
+
+    const response = await axios({
+      url: `http://localhost:5000/${endpoint}`,
+      cancelToken: source.token,
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token') || sessionStorage.getItem('token')}`,
+        ...config?.headers,
+      },
+      ...config,
+    });
+
+    clearTimeout(timeout);
+    return { data: response.data };
+  } catch (error) {
+    if (axios.isCancel(error)) {
+      return {
+        error: {
+          message: UI_STRINGS.API.TIMEOUT_ERROR,
+          code: 408,
+          retryable: true,
+        },
+      };
+    }
+
+    const axiosError = error as AxiosError;
+
+    if (retries > 0 && shouldRetry(axiosError)) {
+      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * (MAX_RETRIES - retries + 1)));
+      return fetchWithRetry<T>(endpoint, config, retries - 1);
+    }
+
+    return {
+      error: {
+        message: getErrorMessage(axiosError),
+        code: axiosError.response?.status,
+        retryable: shouldRetry(axiosError),
+      },
+    };
   }
-  const json = await response.json();
-  console.debug('Received data:', json);
-  return json;
+}
+
+function shouldRetry(error: AxiosError): boolean {
+  // Retry on network errors or 5xx status codes
+  return !error.response ||
+    (error.response.status >= 500 && error.response.status <= 599) ||
+    error.response.status === 429;
+}
+
+function getErrorMessage(error: AxiosError): string {
+  if (!error.response) return UI_STRINGS.API.NETWORK_ERROR;
+
+  switch (error.response.status) {
+    case 401: return UI_STRINGS.API.UNAUTHORIZED;
+    case 403: return UI_STRINGS.API.FORBIDDEN;
+    case 404: return UI_STRINGS.API.NOT_FOUND;
+    case 429: return UI_STRINGS.API.RATE_LIMITED;
+    default: return error.response.data?.message || UI_STRINGS.API.UNKNOWN_ERROR;
+  }
+}
+
+export const fetchFromBackend = async <T>(endpoint: string): Promise<T> => {
+  const response = await fetchWithRetry<T>(endpoint);
+  if (response.error) throw new Error(response.error.message);
+  return response.data!;
+};
+
+export const postToBackend = async <T>(endpoint: string, data: any): Promise<T> => {
+  const response = await fetchWithRetry<T>(endpoint, {
+    method: 'POST',
+    data,
+  });
+  if (response.error) throw new Error(response.error.message);
+  return response.data!;
 };

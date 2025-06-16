@@ -20,30 +20,6 @@ const db = new sqlite3.Database('./users.db', (err) => {
     if (err) throw err;
     console.log('Connected to SQLite database.');
 });
-db.run(`CREATE TABLE IF NOT EXISTS users (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  email TEXT UNIQUE NOT NULL,
-  password TEXT NOT NULL,
-  name TEXT,
-  mobile TEXT,
-  createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
-)`);
-
-// Robust migration: add columns only if missing
-db.get("PRAGMA table_info(users);", (err, columns) => {
-    if (err) console.error('PRAGMA error:', err);
-    const colNames = Array.isArray(columns) ? columns.map(c => c.name) : [];
-    if (!colNames.includes('name')) {
-        db.run('ALTER TABLE users ADD COLUMN name TEXT', (err) => {
-            if (err) console.error('Migration error (name):', err);
-        });
-    }
-    if (!colNames.includes('mobile')) {
-        db.run('ALTER TABLE users ADD COLUMN mobile TEXT', (err) => {
-            if (err) console.error('Migration error (mobile):', err);
-        });
-    }
-});
 
 // Helper: parse duration string to seconds
 function parseDuration(str) {
