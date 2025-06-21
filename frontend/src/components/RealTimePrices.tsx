@@ -5,8 +5,18 @@ import { UI_STRINGS } from '../config';
 import { Link } from 'react-router-dom';
 import { fetchFromBackend } from '../services/api';
 
+interface MarketStatusResponse {
+  status: 'open' | 'closed';
+}
+
+interface RealTimePriceData {
+  Symbol: string;
+  Live_Price: number;
+  [key: string]: any;
+}
+
 const RealTimePrices: React.FC = () => {
-  const [data, setData] = useState<any[]>([]);
+  const [data, setData] = useState<RealTimePriceData[]>([]);
   const [loading, setLoading] = useState(false);
   const [marketStatus, setMarketStatus] = useState<'open' | 'closed' | null>(null);
   const [statusLoading, setStatusLoading] = useState(true);
@@ -14,16 +24,16 @@ const RealTimePrices: React.FC = () => {
 
   useEffect(() => {
     setLoading(true);
-    fetchFromBackend('api/realtime_prices')
-      .then(setData)
+    fetchFromBackend<RealTimePriceData[]>('api/realtime_prices')
+      .then((response: RealTimePriceData[]) => setData(response))
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
 
   useEffect(() => {
-    fetchFromBackend('api/marketstatus')
-      .then((res) => setMarketStatus(res?.status || 'closed'))
-      .catch((err) => setStatusError(err.message))
+    fetchFromBackend<MarketStatusResponse>('api/marketstatus')
+      .then((response: MarketStatusResponse) => setMarketStatus(response.status || 'closed'))
+      .catch((err: any) => setStatusError(err.message))
       .finally(() => setStatusLoading(false));
   }, []);
 

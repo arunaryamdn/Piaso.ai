@@ -103,20 +103,6 @@ function App() {
   const [initialLoad, setInitialLoad] = useState(true);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  useEffect(() => {
-    // Simulate initial load delay
-    const timer = setTimeout(() => setInitialLoad(false), 1500);
-    return () => clearTimeout(timer);
-  }, []);
-
-  if (initialLoad) {
-    return (
-      <div className="app-loading">
-        <LoadingSkeleton type="card" width={300} height={100} count={3} />
-      </div>
-    );
-  }
-
   // Helper to get token and expiry
   function getTokenAndExpiry() {
     const token = getToken();
@@ -129,8 +115,16 @@ function App() {
     }
   }
 
+  useEffect(() => {
+    // Simulate initial load delay
+    const timer = setTimeout(() => setInitialLoad(false), 1500);
+    return () => clearTimeout(timer);
+  }, []);
+
   // Session expiry warning logic
   useEffect(() => {
+    if (initialLoad) return; // Don't run if still loading
+
     function setupTimer() {
       if (timerRef.current) clearTimeout(timerRef.current);
       const { token, exp } = getTokenAndExpiry();
@@ -157,11 +151,12 @@ function App() {
     }
     setupTimer();
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
-  }, []);
+  }, [initialLoad]);
 
   // Countdown effect
   useEffect(() => {
-    if (!showSessionModal) return;
+    if (!showSessionModal || initialLoad) return;
+
     if (countdown <= 0) {
       setShowSessionModal(false);
       localStorage.removeItem('token');
@@ -171,7 +166,15 @@ function App() {
       timerRef.current = setTimeout(() => setCountdown(countdown - 1), 1000);
     }
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
-  }, [showSessionModal, countdown]);
+  }, [showSessionModal, countdown, initialLoad]);
+
+  if (initialLoad) {
+    return (
+      <div className="app-loading">
+        <LoadingSkeleton type="card" width={300} height={100} count={3} />
+      </div>
+    );
+  }
 
   // Refresh token handler
   async function handleRefreshToken() {

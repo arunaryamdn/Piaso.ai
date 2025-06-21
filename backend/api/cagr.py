@@ -57,7 +57,7 @@ def sector_weighted_cagr(portfolio, get_price, get_sector, current_date):
         result[sector] = calculate_cagr(total_invested, total_current, avg_years)
     return result
 
-def symbol_level_cagr(symbol, get_price, current_date):
+def symbol_level_cagr(symbol, get_price, current_date, portfolio):
     result = []
     for row in portfolio:
         symbol = row["symbol"]
