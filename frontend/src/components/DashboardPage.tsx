@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import ErrorBoundary from './ErrorBoundary';
 import LoadingSkeleton from './LoadingSkeleton';
-import { UI_STRINGS } from '../config';
+import { UI_STRINGS, API } from '../config';
 import { DashboardCard } from '../components/DashboardCard';
 import { MdShowChart, MdTrendingUp, MdToday, MdAccountBalanceWallet, MdStar, MdTrendingDown, MdTimeline } from 'react-icons/md';
 import { PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, Legend } from 'recharts';
@@ -114,7 +114,7 @@ const DashboardPage: React.FC = () => {
         const fetchStatus = async () => {
             try {
                 const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-                const res = await fetch('http://localhost:5000/api/portfolio/status', {
+                const res = await fetch(`${API.BASE_URL}/api/portfolio/status`, {
                     headers: token ? { Authorization: `Bearer ${token}` } : {},
                 });
                 const data = await res.json();

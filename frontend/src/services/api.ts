@@ -1,5 +1,5 @@
 import axios, { AxiosError, AxiosRequestConfig } from 'axios';
-import { UI_STRINGS } from '../config';
+import { UI_STRINGS, API } from '../config`;
 
 type ApiResponse<T> = {
   data?: T;
@@ -26,10 +26,10 @@ async function fetchWithRetry<T>(
     }, API_TIMEOUT);
 
     const response = await axios({
-      url: `http://localhost:5000/${endpoint}`,
+      url: `${API.BASE_URL}/${endpoint}`,
       cancelToken: source.token,
       headers: {
-        Authorization: `Bearer ${localStorage.getItem('token') || sessionStorage.getItem('token')}`,
+        Authorization: `Bearer ${localStorage.getItem(`token') || sessionStorage.getItem('token')}`,
         ...config?.headers,
       },
       ...config,

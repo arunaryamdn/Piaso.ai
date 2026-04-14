@@ -2,6 +2,7 @@ import React, { useState, FormEvent, ChangeEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import logo from '../assets/logo.png';
+import { API } from '../config';
 
 const SignupPage: React.FC = () => {
     const [email, setEmail] = useState('');
@@ -16,7 +17,7 @@ const SignupPage: React.FC = () => {
         setLoading(true);
         setError('');
         try {
-            const res = await fetch('http://localhost:4000/api/auth/signup', {
+            const res = await fetch(`${API.AUTH_URL}/api/auth/signup`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password })
