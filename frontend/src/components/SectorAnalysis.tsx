@@ -4,7 +4,7 @@ console.log('SECTOR DEBUG: SectorAnalysis.tsx file loaded!');
 import React, { useEffect, useState } from 'react';
 import ErrorBoundary from './ErrorBoundary';
 import LoadingSkeleton from './LoadingSkeleton';
-import { UI_STRINGS } from '../config';
+import { UI_STRINGS, API } from '../config';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 const COLORS = [
@@ -26,7 +26,7 @@ const SectorAnalysis: React.FC = () => {
     setError(null);
     const token = localStorage.getItem('token') || sessionStorage.getItem('token');
     console.log('SECTOR DEBUG: About to fetch sector data...');
-    fetch('http://localhost:5000/api/sector_analysis', {
+    fetch(`${API.BASE_URL}/api/sector_analysis`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

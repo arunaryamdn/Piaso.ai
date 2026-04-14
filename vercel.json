@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "framework": null,
+  "buildCommand": "cd frontend && npm install && npm run build",
+  "outputDirectory": "frontend/build",
+  "rewrites": [
+    { "source": "/api/auth/:path*", "destination": "/api/auth" },
+    { "source": "/api/user/:path*", "destination": "/api/auth" },
+    { "source": "/api/:path*", "destination": "/api/index" }
+  ],
+  "env": {
+    "DB_PATH": "/tmp/portfolios.db",
+    "AUTH_DB_PATH": "/tmp/users.db",
+    "JWT_SECRET": "changeme",
+    "JWT_REFRESH_SECRET": "refresh_secret",
+    "REACT_APP_API_URL": "",
+    "REACT_APP_AUTH_URL": ""
+  }
+}

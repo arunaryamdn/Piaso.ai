@@ -10,7 +10,7 @@ const HistoricalPerformance: React.FC = () => {
   useEffect(() => {
     setLoading(true);
     setError(null);
-    fetch('http://localhost:5000/api/historical', {
+    fetch(`${API.BASE_URL}/api/historical`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({}),

@@ -5,10 +5,10 @@ import React, { useEffect, useState } from 'react';
 import ErrorBoundary from './ErrorBoundary';
 import LoadingSkeleton from './LoadingSkeleton';
 import PortfolioUpload from '../components/PortfolioUpload';
-import { UI_STRINGS } from '../config';
+import { UI_STRINGS, API } from '../config';
 
-const API_BASE = 'http://localhost:5000';
-const AUTH_API_BASE = 'http://localhost:4000';
+const API_BASE = API.BASE_URL;
+const AUTH_API_BASE = API.AUTH_URL;
 
 /**
  * Profile page component. Shows user's uploaded portfolio and allows upload/delete.

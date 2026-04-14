@@ -6,7 +6,7 @@ import ErrorBoundary from './ErrorBoundary';
 import LoadingSkeleton from './LoadingSkeleton';
 import PortfolioTable from '../components/PortfolioTable';
 import PortfolioUpload from '../components/PortfolioUpload';
-import { UI_STRINGS } from '../config';
+import { UI_STRINGS, API } from '../config';
 import { mapPortfolioData } from '../utils/portfolioMapping';
 
 /**
@@ -25,7 +25,7 @@ const ProfilePage: React.FC = () => {
         pollingRef.current = setInterval(async () => {
             try {
                 const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-                const res = await fetch('http://localhost:5000/api/portfolio/status', {
+                const res = await fetch(`${API.BASE_URL}/api/portfolio/status`, {
                     headers: token ? { Authorization: `Bearer ${token}` } : {},
                 });
                 const data = await res.json();
@@ -45,7 +45,7 @@ const ProfilePage: React.FC = () => {
         const checkStatus = async () => {
             try {
                 const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-                const res = await fetch('http://localhost:5000/api/portfolio/status', {
+                const res = await fetch(`${API.BASE_URL}/api/portfolio/status`, {
                     headers: token ? { Authorization: `Bearer ${token}` } : {},
                 });
                 const data = await res.json();
@@ -67,7 +67,7 @@ const ProfilePage: React.FC = () => {
         if (status === 'ready') {
             setLoading(true);
             setError('');
-            fetch('http://localhost:5000/api/portfolio', {
+            fetch(`${API.BASE_URL}/api/portfolio`, {
                 headers: { Authorization: `Bearer ${localStorage.getItem('token') || sessionStorage.getItem('token')}` },
             })
                 .then(res => {
@@ -88,7 +88,7 @@ const ProfilePage: React.FC = () => {
         setLoading(true);
         setError('');
         try {
-            const res = await fetch('http://localhost:5000/api/portfolio', {
+            const res = await fetch(`${API.BASE_URL}/api/portfolio`, {
                 method: 'DELETE',
                 headers: { Authorization: `Bearer ${localStorage.getItem('token') || sessionStorage.getItem('token')}` },
             });

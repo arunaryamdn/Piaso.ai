@@ -19,6 +19,7 @@ import DashboardPage from './components/DashboardPage';
 import ProfilePage from './components/ProfilePage';
 import NewsPage from './components/NewsPage';
 import PortfolioPage from './components/PortfolioPage';
+import { API } from './config';
 import './App.css';
 
 function getToken() {
@@ -180,7 +181,7 @@ function App() {
   async function handleRefreshToken() {
     setRefreshing(true);
     try {
-      const res = await fetch('http://localhost:4000/api/auth/refresh-token', {
+      const res = await fetch(`${API.AUTH_URL}/api/auth/refresh-token`, {
         method: 'POST',
         credentials: 'include', // send cookie
       });

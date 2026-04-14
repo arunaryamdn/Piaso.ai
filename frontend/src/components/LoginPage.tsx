@@ -4,7 +4,7 @@
 import React, { useState, FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import LoadingSkeleton from './LoadingSkeleton';
-import { UI_STRINGS } from '../config';
+import { UI_STRINGS, API } from '../config';
 import { motion } from 'framer-motion';
 import logo from '../assets/logo.png';
 
@@ -27,7 +27,7 @@ const LoginPage: React.FC = () => {
         setError('');
         console.debug('[LoginPage] Attempting login for', email);
         try {
-            const res = await fetch('http://localhost:4000/api/auth/login', {
+            const res = await fetch(`${API.AUTH_URL}/api/auth/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password, sessionDuration })

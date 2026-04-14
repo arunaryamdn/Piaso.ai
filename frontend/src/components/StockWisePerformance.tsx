@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import ErrorBoundary from './ErrorBoundary';
 import LoadingSkeleton from './LoadingSkeleton';
-import { UI_STRINGS } from '../config';
+import { UI_STRINGS, API } from '../config';
 
 const StockWisePerformance: React.FC = () => {
     const [data, setData] = useState<any[]>([]);
@@ -11,7 +11,7 @@ const StockWisePerformance: React.FC = () => {
     useEffect(() => {
         setLoading(true);
         setError(null);
-        fetch('http://localhost:5000/api/portfolio_table', {
+        fetch(`${API.BASE_URL}/api/portfolio_table`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({}),

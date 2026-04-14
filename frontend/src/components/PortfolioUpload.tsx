@@ -4,7 +4,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import logo from '../assets/logo.png'; // Adjust path as needed
-import { UI_STRINGS } from '../config';
+import { UI_STRINGS, API } from '../config';
 import { mutate } from 'swr';
 
 interface PortfolioUploadProps {
@@ -34,7 +34,7 @@ const PortfolioUpload: React.FC<PortfolioUploadProps> = ({ onUploadSuccess }) =>
     pollingRef.current = setInterval(async () => {
       try {
         const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-        const res = await fetch('http://localhost:5000/api/portfolio/status', {
+        const res = await fetch(`${API.BASE_URL}/api/portfolio/status`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
         const data = await res.json();
@@ -74,7 +74,7 @@ const PortfolioUpload: React.FC<PortfolioUploadProps> = ({ onUploadSuccess }) =>
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const res = await fetch('http://localhost:5000/api/upload-portfolio', {
+      const res = await fetch(`${API.BASE_URL}/api/upload-portfolio`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${localStorage.getItem('token') || sessionStorage.getItem('token')}` },
         body: formData,

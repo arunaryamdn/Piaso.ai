@@ -1,4 +1,5 @@
 import useSWR from 'swr';
+import { API } from '../config';
 
 const fetcher = (url: string) => {
     const token = localStorage.getItem('token') || sessionStorage.getItem('token');
@@ -13,7 +14,7 @@ const fetcher = (url: string) => {
 export function useDashboardAnalytics(reloadKey: any = null) {
     const { data, error, isLoading } = useSWR(
         ['dashboard-analytics', reloadKey],
-        () => fetcher('http://localhost:5000/api/dashboard/analytics'),
+        () => fetcher(`${API.BASE_URL}/api/dashboard/analytics`),
         { revalidateOnFocus: false }
     );
 
