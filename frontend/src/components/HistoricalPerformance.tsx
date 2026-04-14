@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import CardSkeleton from './CardSkeleton';
+import { API } from '../config';
 
 const HistoricalPerformance: React.FC = () => {
   const [data, setData] = useState<any[]>([]);

@@ -1,5 +1,5 @@
 import axios, { AxiosError, AxiosRequestConfig } from 'axios';
-import { UI_STRINGS, API } from '../config`;
+import { UI_STRINGS, API } from '../config';
 
 type ApiResponse<T> = {
   data?: T;
@@ -29,7 +29,7 @@ async function fetchWithRetry<T>(
       url: `${API.BASE_URL}/${endpoint}`,
       cancelToken: source.token,
       headers: {
-        Authorization: `Bearer ${localStorage.getItem(`token') || sessionStorage.getItem('token')}`,
+        Authorization: `Bearer ${localStorage.getItem('token') || sessionStorage.getItem('token')}`,
         ...config?.headers,
       },
       ...config,
@@ -80,7 +80,7 @@ function getErrorMessage(error: AxiosError): string {
     case 403: return UI_STRINGS.API.FORBIDDEN;
     case 404: return UI_STRINGS.API.NOT_FOUND;
     case 429: return UI_STRINGS.API.RATE_LIMITED;
-    default: return error.response.data?.message || UI_STRINGS.API.UNKNOWN_ERROR;
+    default: return (error.response.data as any)?.message || UI_STRINGS.API.UNKNOWN_ERROR;
   }
 }
 
