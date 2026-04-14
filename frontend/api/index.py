@@ -1,13 +1,19 @@
 """
-api/index.py
+frontend/api/index.py
 Vercel serverless entry point for the Paiso.ai FastAPI backend.
-Wraps the FastAPI application with Mangum for AWS Lambda / Vercel compatibility.
+Root Directory is set to `frontend/` in Vercel, so this file lives at
+frontend/api/index.py. We go up two levels to reach the repo root so that
+`import backend.*` resolves correctly.
 """
 import sys
 import os
 
-# Ensure the project root is in the Python path so `backend.*` imports work
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# __file__ = .../frontend/api/index.py
+# Go up: api/ -> frontend/ -> repo root (where backend/ lives)
+_api_dir = os.path.dirname(os.path.abspath(__file__))       # .../frontend/api
+_frontend_dir = os.path.dirname(_api_dir)                   # .../frontend
+_repo_root = os.path.dirname(_frontend_dir)                 # repo root
+sys.path.insert(0, _repo_root)
 
 # Default DB_PATH to /tmp for serverless (Vercel provides /tmp as writable scratch space)
 os.environ.setdefault("DB_PATH", "/tmp/portfolios.db")
