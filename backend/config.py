@@ -32,8 +32,9 @@ AI_RECO_REASON_TEMP_LOSS = "Temporary loss, but no strong sell signal."
 AI_RECO_REASON_NO_SIGNAL = "No strong buy/sell signal."
 
 # API constants
-DB_PATH = './portfolios.db'
-JWT_SECRET = 'changeme'  # Should match your auth server
+import os as _os
+DB_PATH = _os.environ.get('DB_PATH', '/tmp/portfolios.db')
+JWT_SECRET = _os.environ.get('JWT_SECRET', 'changeme')  # Set via environment variable in production
 NODE_API_URL = 'http://localhost:3000/api/equity/'
 NODE_API_HISTORICAL_URL = 'http://localhost:3000/api/equity/historical/'
 

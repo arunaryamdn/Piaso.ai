@@ -1,0 +1,85 @@
+"""
+api/index.py
+Vercel serverless entry point for the Paiso.ai FastAPI backend.
+Wraps the FastAPI application with Mangum for AWS Lambda / Vercel compatibility.
+"""
+import sys
+import os
+
+# Ensure the project root is in the Python path so `backend.*` imports work
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# Default DB_PATH to /tmp for serverless (Vercel provides /tmp as writable scratch space)
+os.environ.setdefault("DB_PATH", "/tmp/portfolios.db")
+
+import sqlite3
+import logging
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from mangum import Mangum
+
+logging.basicConfig(level=logging.INFO)
+
+app = FastAPI(
+    title="Paiso.ai API",
+    description="Backend API for Paiso.ai: Modern Indian stock market portfolio analytics platform.",
+    version="1.0.0",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+def init_db():
+    db_path = os.environ.get("DB_PATH", "/tmp/portfolios.db")
+    try:
+        conn = sqlite3.connect(db_path)
+        c = conn.cursor()
+        c.execute(
+            """CREATE TABLE IF NOT EXISTS portfolios (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            data TEXT NOT NULL,
+            filename TEXT,
+            filesize INTEGER,
+            uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            status TEXT DEFAULT 'ready'
+        )"""
+        )
+        for col_def in [
+            "ALTER TABLE portfolios ADD COLUMN filename TEXT",
+            "ALTER TABLE portfolios ADD COLUMN filesize INTEGER",
+            "ALTER TABLE portfolios ADD COLUMN status TEXT DEFAULT 'ready'",
+        ]:
+            try:
+                c.execute(col_def)
+            except Exception:
+                pass
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        logging.warning(f"DB init warning: {e}")
+
+
+init_db()
+
+try:
+    from backend.api.routes_portfolio import router as portfolio_router
+    app.include_router(portfolio_router)
+    logging.info("Portfolio routes loaded successfully.")
+except Exception as e:
+    logging.error(f"Could not load portfolio routes: {e}")
+
+try:
+    from backend.tests.bug import router as bug_router
+    app.include_router(bug_router)
+except Exception:
+    pass
+
+# Mangum adapter — turns ASGI app into a Lambda/Vercel handler
+handler = Mangum(app, lifespan="off")

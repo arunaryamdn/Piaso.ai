@@ -92,5 +92,7 @@ export const UI_STRINGS = {
 };
 
 export const API = {
-    BASE_URL: 'http://localhost:5000',
-}; 
+    // In production (Vercel), REACT_APP_API_URL is empty so requests are same-origin (/api/...).
+    // In local development, set REACT_APP_API_URL=http://localhost:5000 in frontend/.env.local
+    BASE_URL: process.env.REACT_APP_API_URL !== undefined ? process.env.REACT_APP_API_URL : 'http://localhost:5000',
+};

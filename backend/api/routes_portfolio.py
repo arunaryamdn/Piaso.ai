@@ -41,35 +41,43 @@ API_KEY = "laql5ne82n78cuip"
 API_SECRET = "lebeha15pmvtnl6dj05knc2be59tv78d"
 GO_PATH = shutil.which("go") or r"C:\Go\bin\go.exe"
 
-# MCP bridge setup (from mcp_bridge.py)
-if not hasattr(globals(), 'mcp_proc'):
-    import subprocess
-    mcp_proc = subprocess.Popen(
-        [GO_PATH, "run", "main.go"],
-        cwd="C:/Users/arung/Paiso.ai/kite-mcp-server",  # Adjust path as needed
-        env={**os.environ, "APP_MODE": "stdio", "KITE_API_KEY": API_KEY, "KITE_API_SECRET": API_SECRET},
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-        bufsize=1
-    )
-    response_buffer = []
-    def read_stdout():
-        while True:
-            if mcp_proc.stdout is not None:
-                line = mcp_proc.stdout.readline()
-                if line:
-                    response_buffer.append(line.strip())
-    def read_stderr():
-        while True:
-            if mcp_proc.stderr is not None:
-                line = mcp_proc.stderr.readline()
-                if line:
-                    print("MCP STDERR:", line.strip())
-    import threading
-    threading.Thread(target=read_stdout, daemon=True).start()
-    threading.Thread(target=read_stderr, daemon=True).start()
+# MCP bridge setup (from mcp_bridge.py) - optional, fails gracefully in serverless environments
+mcp_proc = None
+response_buffer = []
+try:
+    if GO_PATH and os.path.exists(GO_PATH):
+        mcp_cwd = os.environ.get(
+            "MCP_SERVER_PATH",
+            os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "kite-mcp-server")
+        )
+        if os.path.isdir(mcp_cwd):
+            import subprocess
+            mcp_proc = subprocess.Popen(
+                [GO_PATH, "run", "main.go"],
+                cwd=mcp_cwd,
+                env={**os.environ, "APP_MODE": "stdio", "KITE_API_KEY": API_KEY, "KITE_API_SECRET": API_SECRET},
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                bufsize=1
+            )
+            def read_stdout():
+                while True:
+                    if mcp_proc and mcp_proc.stdout is not None:
+                        line = mcp_proc.stdout.readline()
+                        if line:
+                            response_buffer.append(line.strip())
+            def read_stderr():
+                while True:
+                    if mcp_proc and mcp_proc.stderr is not None:
+                        line = mcp_proc.stderr.readline()
+                        if line:
+                            print("MCP STDERR:", line.strip())
+            threading.Thread(target=read_stdout, daemon=True).start()
+            threading.Thread(target=read_stderr, daemon=True).start()
+except Exception as _mcp_err:
+    logging.warning(f"MCP bridge could not start (non-critical): {_mcp_err}")
 
 # --- JWT Helper ---
 def get_user_id_from_token(authorization: str = Header(...)):
