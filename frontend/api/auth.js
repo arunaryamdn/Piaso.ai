@@ -1,87 +1,95 @@
 /**
  * api/auth.js
- * Vercel serverless entry point for the Paiso.ai auth service.
- * Handles all /api/auth/* and /api/user/* routes via Express.
- * SQLite database is stored in /tmp (Vercel writable scratch space).
+ * Vercel serverless auth service using Neon Postgres for persistent storage.
+ * Requires POSTGRES_URL env var — add "Neon Postgres" storage in the Vercel dashboard
+ * and it will be set automatically.
  */
 
 const express = require('express');
-const sqlite3 = require('sqlite3').verbose();
+const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
-const path = require('path');
 
 const app = express();
 
 const JWT_SECRET = process.env.JWT_SECRET || 'changeme';
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'refresh_secret';
-const DB_PATH = process.env.AUTH_DB_PATH || '/tmp/users.db';
+
+// Neon Postgres connection — POSTGRES_URL is set automatically by Vercel
+// when you add Neon Postgres storage to your project.
+const pool = new Pool({
+    connectionString: process.env.POSTGRES_URL,
+    ssl: process.env.POSTGRES_URL ? { rejectUnauthorized: false } : false,
+});
+
+// Ensure users table exists (runs on each cold start, idempotent)
+async function initDb() {
+    try {
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                email TEXT UNIQUE NOT NULL,
+                password TEXT NOT NULL,
+                name TEXT DEFAULT '',
+                mobile TEXT DEFAULT '',
+                "createdAt" TIMESTAMPTZ DEFAULT NOW()
+            )
+        `);
+    } catch (err) {
+        console.error('DB init error:', err.message);
+    }
+}
+initDb();
 
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
 
-// Open (or create) the SQLite database and ensure the users table exists
-const db = new sqlite3.Database(DB_PATH, (err) => {
-    if (err) console.error('SQLite open error:', err.message);
-});
-
-db.serialize(() => {
-    db.run(`CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        email TEXT UNIQUE NOT NULL,
-        password TEXT NOT NULL,
-        name TEXT DEFAULT '',
-        mobile TEXT DEFAULT '',
-        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
-    )`);
-});
-
-// Helper: parse duration string to seconds
 function parseDuration(str) {
     if (typeof str === 'string') {
         if (str.endsWith('h')) return parseInt(str) * 60 * 60;
         if (str.endsWith('d')) return parseInt(str) * 24 * 60 * 60;
     }
-    return 60 * 60; // default 1 hour
+    return 60 * 60;
 }
 
 // Signup
-app.post('/api/auth/signup', (req, res) => {
+app.post('/api/auth/signup', async (req, res) => {
     const { email, password, name = '', mobile = '', sessionDuration = '1h' } = req.body;
     if (!email || !password) return res.status(400).json({ error: 'Email and password required.' });
-    db.get('SELECT id FROM users WHERE email = ?', [email], (err, user) => {
-        if (err) return res.status(500).json({ error: 'Database error.' });
-        if (user) return res.status(409).json({ error: 'Email already registered.' });
+    try {
+        const existing = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
+        if (existing.rows.length > 0) return res.status(409).json({ error: 'Email already registered.' });
+
         const hash = bcrypt.hashSync(password, 10);
-        db.run(
-            'INSERT INTO users (email, password, name, mobile) VALUES (?, ?, ?, ?)',
-            [email, hash, name, mobile],
-            function (err) {
-                if (err) return res.status(500).json({ error: 'Database error.' });
-                const expiresIn = parseDuration(sessionDuration);
-                const accessToken = jwt.sign({ id: this.lastID, email }, JWT_SECRET, { expiresIn });
-                const refreshToken = jwt.sign({ id: this.lastID, email }, JWT_REFRESH_SECRET, { expiresIn: 7 * 24 * 60 * 60 });
-                res.cookie('refreshToken', refreshToken, {
-                    httpOnly: true,
-                    secure: true,
-                    sameSite: 'none',
-                    maxAge: 7 * 24 * 60 * 60 * 1000,
-                });
-                res.json({ token: accessToken });
-            }
+        const result = await pool.query(
+            'INSERT INTO users (email, password, name, mobile) VALUES ($1, $2, $3, $4) RETURNING id',
+            [email, hash, name, mobile]
         );
-    });
+        const userId = result.rows[0].id;
+        const expiresIn = parseDuration(sessionDuration);
+        const accessToken = jwt.sign({ id: userId, email }, JWT_SECRET, { expiresIn });
+        const refreshToken = jwt.sign({ id: userId, email }, JWT_REFRESH_SECRET, { expiresIn: 7 * 24 * 60 * 60 });
+        res.cookie('refreshToken', refreshToken, {
+            httpOnly: true, secure: true, sameSite: 'none',
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+        });
+        res.json({ token: accessToken });
+    } catch (err) {
+        console.error('Signup error:', err);
+        res.status(500).json({ error: 'Database error.' });
+    }
 });
 
 // Login
-app.post('/api/auth/login', (req, res) => {
+app.post('/api/auth/login', async (req, res) => {
     const { email, password, sessionDuration = '1h' } = req.body;
     if (!email || !password) return res.status(400).json({ error: 'Email and password required.' });
-    db.get('SELECT * FROM users WHERE email = ?', [email], (err, user) => {
-        if (err) return res.status(500).json({ error: 'Database error.' });
+    try {
+        const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+        const user = result.rows[0];
         if (!user || !bcrypt.compareSync(password, user.password)) {
             return res.status(401).json({ error: 'Invalid credentials.' });
         }
@@ -89,13 +97,14 @@ app.post('/api/auth/login', (req, res) => {
         const accessToken = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn });
         const refreshToken = jwt.sign({ id: user.id, email: user.email }, JWT_REFRESH_SECRET, { expiresIn: 7 * 24 * 60 * 60 });
         res.cookie('refreshToken', refreshToken, {
-            httpOnly: true,
-            secure: true,
-            sameSite: 'none',
+            httpOnly: true, secure: true, sameSite: 'none',
             maxAge: 7 * 24 * 60 * 60 * 1000,
         });
         res.json({ token: accessToken });
-    });
+    } catch (err) {
+        console.error('Login error:', err);
+        res.status(500).json({ error: 'Database error.' });
+    }
 });
 
 // Refresh token
@@ -130,40 +139,39 @@ function authMiddleware(req, res, next) {
     }
 }
 
-// Get user profile
-app.get('/api/user/profile', authMiddleware, (req, res) => {
-    db.get(
-        'SELECT id, email, name, mobile, createdAt FROM users WHERE id = ?',
-        [Number(req.user.id)],
-        (err, user) => {
-            if (err) return res.status(500).json({ error: 'Database error.' });
-            if (!user) return res.status(404).json({ error: 'User not found.' });
-            res.json(user);
-        }
-    );
+// Get profile
+app.get('/api/user/profile', authMiddleware, async (req, res) => {
+    try {
+        const result = await pool.query(
+            'SELECT id, email, name, mobile, "createdAt" FROM users WHERE id = $1',
+            [Number(req.user.id)]
+        );
+        if (!result.rows[0]) return res.status(404).json({ error: 'User not found.' });
+        res.json(result.rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: 'Database error.' });
+    }
 });
 
-// Update user profile
-app.patch('/api/user/profile', authMiddleware, (req, res) => {
+// Update profile
+app.patch('/api/user/profile', authMiddleware, async (req, res) => {
     const { name, mobile } = req.body;
     if (typeof name !== 'string' && typeof mobile !== 'string') {
         return res.status(400).json({ error: 'Nothing to update.' });
     }
-    db.run(
-        'UPDATE users SET name = COALESCE(?, name), mobile = COALESCE(?, mobile) WHERE id = ?',
-        [name, mobile, req.user.id],
-        function (err) {
-            if (err) return res.status(500).json({ error: 'Database error.' });
-            db.get(
-                'SELECT id, email, name, mobile, createdAt FROM users WHERE id = ?',
-                [req.user.id],
-                (err, user) => {
-                    if (!user) return res.status(404).json({ error: 'User not found.' });
-                    res.json(user);
-                }
-            );
-        }
-    );
+    try {
+        await pool.query(
+            'UPDATE users SET name = COALESCE($1, name), mobile = COALESCE($2, mobile) WHERE id = $3',
+            [name, mobile, req.user.id]
+        );
+        const result = await pool.query(
+            'SELECT id, email, name, mobile, "createdAt" FROM users WHERE id = $1',
+            [req.user.id]
+        );
+        res.json(result.rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: 'Database error.' });
+    }
 });
 
 module.exports = app;
