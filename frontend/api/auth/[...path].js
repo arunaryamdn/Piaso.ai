@@ -1,8 +1,8 @@
 /**
- * api/auth.js
- * Vercel serverless auth service using Neon Postgres for persistent storage.
- * Requires POSTGRES_URL env var — add "Neon Postgres" storage in the Vercel dashboard
- * and it will be set automatically.
+ * api/auth/[...path].js
+ * Catch-all Vercel serverless function for all /api/auth/* routes.
+ * Using catch-all routing ensures Express receives the full original path
+ * (e.g. /api/auth/signup) rather than the rewritten destination.
  */
 
 const express = require('express');
@@ -12,19 +12,14 @@ const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 
-const app = express();
-
 const JWT_SECRET = process.env.JWT_SECRET || 'changeme';
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'refresh_secret';
 
-// Neon Postgres connection — POSTGRES_URL is set automatically by Vercel
-// when you add Neon Postgres storage to your project.
 const pool = new Pool({
     connectionString: process.env.POSTGRES_URL,
-    ssl: process.env.POSTGRES_URL ? { rejectUnauthorized: false } : false,
+    ssl: { rejectUnauthorized: false },
 });
 
-// Ensure users table exists (runs on each cold start, idempotent)
 async function initDb() {
     try {
         await pool.query(`
@@ -43,6 +38,7 @@ async function initDb() {
 }
 initDb();
 
+const app = express();
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
@@ -79,7 +75,7 @@ app.post('/api/auth/signup', async (req, res) => {
         res.json({ token: accessToken });
     } catch (err) {
         console.error('Signup error:', err);
-        res.status(500).json({ error: 'Database error.' });
+        res.status(500).json({ error: 'Database error: ' + err.message });
     }
 });
 
@@ -103,7 +99,7 @@ app.post('/api/auth/login', async (req, res) => {
         res.json({ token: accessToken });
     } catch (err) {
         console.error('Login error:', err);
-        res.status(500).json({ error: 'Database error.' });
+        res.status(500).json({ error: 'Database error: ' + err.message });
     }
 });
 
@@ -124,54 +120,6 @@ app.post('/api/auth/refresh-token', (req, res) => {
 app.post('/api/auth/logout', (req, res) => {
     res.clearCookie('refreshToken');
     res.json({ message: 'Logged out' });
-});
-
-// Auth middleware
-function authMiddleware(req, res, next) {
-    const auth = req.headers.authorization;
-    if (!auth) return res.status(401).json({ error: 'No token provided.' });
-    const token = auth.split(' ')[1];
-    try {
-        req.user = jwt.verify(token, JWT_SECRET);
-        next();
-    } catch {
-        res.status(401).json({ error: 'Invalid token.' });
-    }
-}
-
-// Get profile
-app.get('/api/user/profile', authMiddleware, async (req, res) => {
-    try {
-        const result = await pool.query(
-            'SELECT id, email, name, mobile, "createdAt" FROM users WHERE id = $1',
-            [Number(req.user.id)]
-        );
-        if (!result.rows[0]) return res.status(404).json({ error: 'User not found.' });
-        res.json(result.rows[0]);
-    } catch (err) {
-        res.status(500).json({ error: 'Database error.' });
-    }
-});
-
-// Update profile
-app.patch('/api/user/profile', authMiddleware, async (req, res) => {
-    const { name, mobile } = req.body;
-    if (typeof name !== 'string' && typeof mobile !== 'string') {
-        return res.status(400).json({ error: 'Nothing to update.' });
-    }
-    try {
-        await pool.query(
-            'UPDATE users SET name = COALESCE($1, name), mobile = COALESCE($2, mobile) WHERE id = $3',
-            [name, mobile, req.user.id]
-        );
-        const result = await pool.query(
-            'SELECT id, email, name, mobile, "createdAt" FROM users WHERE id = $1',
-            [req.user.id]
-        );
-        res.json(result.rows[0]);
-    } catch (err) {
-        res.status(500).json({ error: 'Database error.' });
-    }
 });
 
 module.exports = app;
