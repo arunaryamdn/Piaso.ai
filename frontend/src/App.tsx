@@ -19,6 +19,9 @@ import DashboardPage from './components/DashboardPage';
 import ProfilePage from './components/ProfilePage';
 import NewsPage from './components/NewsPage';
 import PortfolioPage from './components/PortfolioPage';
+import StockDetailPage from './components/StockDetailPage';
+import ForgotPasswordPage from './components/ForgotPasswordPage';
+import ResetPasswordPage from './components/ResetPasswordPage';
 import { API } from './config';
 import './App.css';
 
@@ -76,7 +79,8 @@ function AnimatedRoutes() {
           </motion.div>
         } />
         <Route path="/zerodha/callback" element={<ZerodhaAuthCallback />} />
-        <Route path="/news" element={<NewsPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="*" element={<NotFound />} />
         {/* Protected routes: with Layout */}
         <Route element={<PrivateRoute />}>
@@ -88,8 +92,10 @@ function AnimatedRoutes() {
             } />
             <Route path="/portfolio" element={<PortfolioPage />} />
             <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/news" element={<NewsPage />} />
             <Route path="/realtime" element={<RealTimePrices />} />
             <Route path="/ai" element={<AIRecommendations />} />
+            <Route path="/stock/:symbol" element={<StockDetailPage />} />
           </Route>
         </Route>
       </Routes>

@@ -1,6 +1,3 @@
-// DEBUG: Prove file load
-console.log('SECTOR DEBUG: SectorAnalysis.tsx file loaded!');
-
 import React, { useEffect, useState } from 'react';
 import ErrorBoundary from './ErrorBoundary';
 import LoadingSkeleton from './LoadingSkeleton';
@@ -12,20 +9,15 @@ const COLORS = [
 ];
 
 const SectorAnalysis: React.FC = () => {
-  // DEBUG: Prove component function invocation
-  console.log('SECTOR DEBUG: SectorAnalysis component function invoked!');
 
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // DEBUG: Prove useEffect runs
-    console.log('SECTOR DEBUG: useEffect running!');
     setLoading(true);
     setError(null);
     const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-    console.log('SECTOR DEBUG: About to fetch sector data...');
     fetch(`${API.BASE_URL}/api/sector_analysis`, {
       method: 'POST',
       headers: {
@@ -37,7 +29,6 @@ const SectorAnalysis: React.FC = () => {
       .then(async (res) => {
         if (!res.ok) throw new Error('Failed to fetch sector allocation');
         const d = await res.json();
-        console.log('SECTOR DEBUG: Fetched sector data:', d);
         setData(Array.isArray(d) ? d : []);
       })
       .catch((err) => setError(err.message))
@@ -48,12 +39,10 @@ const SectorAnalysis: React.FC = () => {
   if (error) return <div className="error-message">{error}</div>;
   if (!data.length) return <div>{UI_STRINGS.GENERAL.NO_DATA}</div>;
 
-  // Normalize keys for frontend consistency
   const normalized = data.map((row: any) => ({
     sector: row.Sector ?? row.sector,
     current_value: row.Current_Value ?? row.current_value
   }));
-  console.log('SECTOR DEBUG: Sector Pie Data:', normalized);
 
   return (
     <ErrorBoundary>

@@ -117,15 +117,18 @@ const LoginPage: React.FC = () => {
                             )}
                         </button>
                     </div>
-                    <label className="flex items-center gap-2 text-[#b5cbb0] text-sm select-none">
-                        <input
-                            type="checkbox"
-                            checked={rememberMe}
-                            onChange={e => setRememberMe(e.target.checked)}
-                            className="accent-[#53D22C]"
-                        />
-                        {UI_STRINGS.AUTH.REMEMBER_ME}
-                    </label>
+                    <div className="flex items-center justify-between">
+                        <label className="flex items-center gap-2 text-[#b5cbb0] text-sm select-none">
+                            <input
+                                type="checkbox"
+                                checked={rememberMe}
+                                onChange={e => setRememberMe(e.target.checked)}
+                                className="accent-[#53D22C]"
+                            />
+                            {UI_STRINGS.AUTH.REMEMBER_ME}
+                        </label>
+                        <Link to="/forgot-password" className="text-[#53D22C] text-sm hover:underline">Forgot password?</Link>
+                    </div>
                     {error && <div className="text-red-500 text-sm text-center">{error}</div>}
                     <motion.button
                         type="submit"

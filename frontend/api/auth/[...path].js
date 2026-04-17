@@ -122,4 +122,34 @@ app.post('/api/auth/logout', (req, res) => {
     res.json({ message: 'Logged out' });
 });
 
+// Forgot password — returns a short-lived reset token
+app.post('/api/auth/forgot-password', async (req, res) => {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email required.' });
+    try {
+        const result = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
+        if (!result.rows[0]) return res.status(404).json({ error: 'No account with that email.' });
+        const resetToken = jwt.sign({ id: result.rows[0].id, email, purpose: 'reset' }, JWT_SECRET, { expiresIn: 900 });
+        res.json({ resetToken, message: 'Use the resetToken to set a new password.' });
+    } catch (err) {
+        res.status(500).json({ error: 'Database error: ' + err.message });
+    }
+});
+
+// Reset password
+app.post('/api/auth/reset-password', async (req, res) => {
+    const { resetToken, newPassword } = req.body;
+    if (!resetToken || !newPassword) return res.status(400).json({ error: 'resetToken and newPassword required.' });
+    try {
+        const payload = jwt.verify(resetToken, JWT_SECRET);
+        if (payload.purpose !== 'reset') return res.status(400).json({ error: 'Invalid reset token.' });
+        const hash = bcrypt.hashSync(newPassword, 10);
+        await pool.query('UPDATE users SET password = $1 WHERE id = $2', [hash, payload.id]);
+        res.json({ message: 'Password updated. You can now log in.' });
+    } catch (err) {
+        if (err.name === 'TokenExpiredError') return res.status(400).json({ error: 'Reset token expired. Request a new one.' });
+        res.status(400).json({ error: 'Invalid reset token.' });
+    }
+});
+
 module.exports = app;

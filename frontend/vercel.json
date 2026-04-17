@@ -9,6 +9,8 @@
     "JWT_REFRESH_SECRET": "refresh_secret",
     "REACT_APP_API_URL": "",
     "REACT_APP_AUTH_URL": "",
-    "POSTGRES_URL": "postgresql://neondb_owner:npg_VMvO3XZ2QAmc@ep-square-firefly-a1ea7nt0-pooler.ap-southeast-1.aws.neon.tech/neondb?channel_binding=require&sslmode=require"
+    "POSTGRES_URL": "postgresql://neondb_owner:npg_VMvO3XZ2QAmc@ep-square-firefly-a1ea7nt0-pooler.ap-southeast-1.aws.neon.tech/neondb?channel_binding=require&sslmode=require",
+    "ZERODHA_API_KEY": "",
+    "ZERODHA_API_SECRET": ""
   }
 }

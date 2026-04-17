@@ -1,107 +1,136 @@
-// News.tsx
-// News page for Paiso.ai. Shows real-time news feed (currently unavailable placeholder).
-
-import React from 'react';
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import logo from '../assets/logo.png';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { UI_STRINGS } from '../config';
+import { UI_STRINGS, API } from '../config';
 
-/**
- * News page component. Shows filters and a placeholder message for news feed.
- */
+interface Article {
+    title: string;
+    link: string;
+    publisher: string;
+    published: number | null;
+    symbol: string;
+    thumbnail?: string;
+}
+
+const formatDate = (ts: number | null) => {
+    if (!ts) return '';
+    const d = new Date(ts * 1000);
+    return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+};
+
 const News: React.FC = () => {
-  const [stock, setStock] = useState('');
-  const [sector, setSector] = useState('');
-  const [search, setSearch] = useState('');
+    const [articles, setArticles] = useState<Article[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [symbolFilter, setSymbolFilter] = useState('');
 
-  console.debug('[News] Rendered News page');
+    useEffect(() => {
+        setLoading(true);
+        setError(null);
+        const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+        fetch(`${API.BASE_URL}/api/news`, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+        })
+            .then(res => res.ok ? res.json() : res.json().then(e => Promise.reject(e)))
+            .then(data => setArticles(data.articles || []))
+            .catch(e => setError(e.detail || e.message || UI_STRINGS.GENERAL.ERROR))
+            .finally(() => setLoading(false));
+    }, []);
 
-  const stockOptions = [
-    { value: '', label: 'All Stocks' },
-    { value: 'reliance', label: 'Reliance Industries' },
-    { value: 'tcs', label: 'Tata Consultancy Services' },
-    { value: 'hdfc', label: 'HDFC Bank' },
-    { value: 'infosys', label: 'Infosys' },
-  ];
-  const sectorOptions = [
-    { value: '', label: 'All Sectors' },
-    { value: 'it', label: 'Information Technology' },
-    { value: 'finance', label: 'Finance' },
-    { value: 'energy', label: 'Energy' },
-    { value: 'auto', label: 'Automobile' },
-  ];
+    const symbols = Array.from(new Set(articles.map(a => a.symbol))).filter(Boolean);
+    const filtered = symbolFilter ? articles.filter(a => a.symbol === symbolFilter) : articles;
 
-  return (
-    <motion.div
-      className="main-content"
-      initial={{ opacity: 0, y: 32 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.7, ease: 'easeOut' }}
-    >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem', width: '100%' }}>
-        <h1 style={{ fontSize: '2.2rem', fontWeight: 800, color: '#fff', margin: 0 }}>{UI_STRINGS.NEWS.TITLE}</h1>
-      </div>
-      <div className="relative flex min-h-screen flex-col bg-[#162013] font-[Manrope, Noto Sans, sans-serif]">
-        <header className="flex items-center justify-between border-b border-[#2e4328] px-10 py-4 shadow-sm">
-          <div className="flex items-center gap-10">
-            <div className="flex items-center gap-3 text-[#53d22c]">
-              <img src={logo} alt="Paiso.ai Logo" className="news-logo" style={{ height: 28, width: 28 }} />
-              <h2 className="text-[#53d22c] text-xl font-bold leading-tight tracking-[-0.015em]">Paiso.ai</h2>
+    return (
+        <motion.div
+            className="p-4 md:p-6 flex flex-col gap-6 w-full max-w-screen-xl mx-auto"
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: 'easeOut' }}
+        >
+            <div>
+                <h1 className="text-3xl font-extrabold text-white">{UI_STRINGS.NEWS.TITLE}</h1>
+                <p className="text-[#A2C398] mt-1">Latest news from your portfolio stocks</p>
             </div>
-            <nav className="flex items-center gap-8">
-              <Link className="text-gray-300 hover:text-white text-sm font-medium" to="/portfolio">{UI_STRINGS.NAV.PORTFOLIO}</Link>
-              <Link className="text-gray-300 hover:text-white text-sm font-medium" to="/dashboard">{UI_STRINGS.NAV.WATCHLIST}</Link>
-              <Link className="text-[#53d22c] text-sm font-bold" to="/news">{UI_STRINGS.NAV.NEWS}</Link>
-              <Link className="text-gray-300 hover:text-white text-sm font-medium" to="/ai">{UI_STRINGS.NAV.AI}</Link>
-              <Link className="text-gray-300 hover:text-white text-sm font-medium" to="/realtime">{UI_STRINGS.NAV.REALTIME}</Link>
-            </nav>
-          </div>
-        </header>
-        <main className="flex flex-1 gap-8 px-8 py-6">
-          <aside className="flex flex-col w-72 bg-[#1A2615] rounded-xl p-6 shadow-lg self-start">
-            <h2 className="text-white text-xl font-semibold mb-6">{UI_STRINGS.NEWS.FILTERS}</h2>
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1.5" htmlFor="stock-filter">Filter by Stock</label>
-                <select
-                  className="form-select block w-full rounded-lg text-gray-300 focus:outline-0 focus:ring-2 focus:ring-[#53d22c] border border-[#426039] bg-[#21301c] focus:border-[#53d22c] h-12 px-3.5 text-sm font-normal"
-                  id="stock-filter"
-                  value={stock}
-                  onChange={e => setStock(e.target.value)}
+
+            {/* Filter bar */}
+            <div className="flex items-center gap-3 flex-wrap">
+                <button
+                    onClick={() => setSymbolFilter('')}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${symbolFilter === '' ? 'bg-[#53D22C] text-[#162013]' : 'bg-[#1A2615] text-[#A2C398] border border-white/10 hover:border-[#53D22C]/40'}`}
                 >
-                  {stockOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1.5" htmlFor="sector-filter">Filter by Sector</label>
-                <select
-                  className="form-select block w-full rounded-lg text-gray-300 focus:outline-0 focus:ring-2 focus:ring-[#53d22c] border border-[#426039] bg-[#21301c] focus:border-[#53d22c] h-12 px-3.5 text-sm font-normal"
-                  id="sector-filter"
-                  value={sector}
-                  onChange={e => setSector(e.target.value)}
-                >
-                  {sectorOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-                </select>
-              </div>
+                    All
+                </button>
+                {symbols.map(sym => (
+                    <button
+                        key={sym}
+                        onClick={() => setSymbolFilter(sym)}
+                        className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${symbolFilter === sym ? 'bg-[#53D22C] text-[#162013]' : 'bg-[#1A2615] text-[#A2C398] border border-white/10 hover:border-[#53D22C]/40'}`}
+                    >
+                        {sym}
+                    </button>
+                ))}
             </div>
-            <button className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center rounded-lg h-11 px-4 mt-8 w-full bg-[#53d22c] hover:bg-[#48b826] text-[#162013] text-sm font-bold tracking-[0.015em] transition-colors">
-              <span className="truncate">{UI_STRINGS.NEWS.APPLY_FILTERS}</span>
-            </button>
-          </aside>
-          <section className="flex flex-col flex-1">
-            <h1 className="text-white tracking-tight text-3xl font-bold mb-6">{UI_STRINGS.NEWS.REALTIME_FEED}</h1>
-            <div className="flex flex-col items-center justify-center h-full py-24">
-              <span className="material-icons" style={{ fontSize: 64, color: '#7ecbff', marginBottom: 16 }}>info</span>
-              <h2 className="text-2xl font-bold text-[#53d22c] mb-2">{UI_STRINGS.NEWS.UNAVAILABLE}</h2>
-              <p className="text-gray-400 text-lg">{UI_STRINGS.NEWS.UNAVAILABLE_DESC}</p>
-            </div>
-          </section>
-        </main>
-      </div>
-    </motion.div>
-  );
+
+            {loading && (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    {[...Array(6)].map((_, i) => (
+                        <div key={i} className="rounded-2xl bg-[#1A2615]/80 border border-white/5 p-5 animate-pulse h-40" />
+                    ))}
+                </div>
+            )}
+
+            {error && (
+                <div className="flex flex-col items-center justify-center py-20 text-center">
+                    <span className="text-4xl mb-4">📰</span>
+                    <h2 className="text-xl font-bold text-[#53d22c] mb-2">{UI_STRINGS.NEWS.UNAVAILABLE}</h2>
+                    <p className="text-gray-400">{UI_STRINGS.NEWS.UNAVAILABLE_DESC}</p>
+                </div>
+            )}
+
+            {!loading && !error && filtered.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-20 text-center">
+                    <span className="text-4xl mb-4">📭</span>
+                    <p className="text-gray-400">No news articles found. Upload a portfolio to see relevant news.</p>
+                </div>
+            )}
+
+            {!loading && !error && filtered.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    {filtered.map((article, idx) => (
+                        <a
+                            key={idx}
+                            href={article.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex flex-col rounded-2xl bg-[#1A2615]/80 border border-white/5 hover:border-[#53D22C]/30 p-5 transition-all hover:shadow-xl hover:-translate-y-0.5 group"
+                        >
+                            {article.thumbnail && (
+                                <img
+                                    src={article.thumbnail}
+                                    alt=""
+                                    className="w-full h-32 object-cover rounded-lg mb-3"
+                                    onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                />
+                            )}
+                            <div className="flex items-center gap-2 mb-2">
+                                <span className="text-xs font-bold bg-[#53D22C]/10 text-[#53D22C] border border-[#53D22C]/20 rounded px-2 py-0.5">
+                                    {article.symbol}
+                                </span>
+                                {article.publisher && (
+                                    <span className="text-xs text-gray-500 truncate">{article.publisher}</span>
+                                )}
+                            </div>
+                            <p className="text-white text-sm font-semibold leading-snug group-hover:text-[#53D22C] transition-colors flex-1 line-clamp-3">
+                                {article.title}
+                            </p>
+                            {article.published && (
+                                <p className="text-gray-500 text-xs mt-3">{formatDate(article.published)}</p>
+                            )}
+                        </a>
+                    ))}
+                </div>
+            )}
+        </motion.div>
+    );
 };
 
 export default News;

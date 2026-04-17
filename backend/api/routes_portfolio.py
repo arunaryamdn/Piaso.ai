@@ -10,11 +10,11 @@ from backend.utils.portfolio import (
     fetch_realtime_prices,
     get_historical_performance,
     create_risk_profile,
-    get_news,
     get_sector_analysis,
     get_portfolio_metrics,
     preprocess_portfolio,
 )
+from backend.utils.news import get_news
 from backend.config import (
     MSG_NO_PORTFOLIO, MSG_UPLOAD_SUCCESS, MSG_UPLOAD_FAIL, MSG_PORTFOLIO_DELETED,
     MSG_INVALID_TOKEN, MSG_INVALID_HEADER, MSG_MISSING_TOKEN, MSG_AUTH_REQUIRED, MSG_INTERNAL_ERROR,
@@ -37,8 +37,8 @@ import re
 
 router = APIRouter()
 
-API_KEY = "laql5ne82n78cuip"
-API_SECRET = "lebeha15pmvtnl6dj05knc2be59tv78d"
+API_KEY = os.environ.get("ZERODHA_API_KEY", "")
+API_SECRET = os.environ.get("ZERODHA_API_SECRET", "")
 GO_PATH = shutil.which("go") or r"C:\Go\bin\go.exe"
 
 # MCP bridge setup (from mcp_bridge.py) - optional, fails gracefully in serverless environments
@@ -230,10 +230,27 @@ def delete_portfolio(user_id: int = Depends(get_user_id_from_token)):
         raise HTTPException(status_code=500, detail=MSG_INTERNAL_ERROR)
 
 @router.get("/api/news")
-def news():
-    logging.debug("Received get-news request")
-    logging.error(MSG_NO_PORTFOLIO)
-    raise HTTPException(status_code=404, detail=MSG_NO_PORTFOLIO)
+def news(symbol: str = None, user_id: int = Depends(get_user_id_from_token)):
+    try:
+        if symbol:
+            tickers = [symbol if symbol.endswith(".NS") else f"{symbol}.NS"]
+        else:
+            conn = sqlite3.connect(DB_PATH)
+            c = conn.cursor()
+            c.execute('SELECT data FROM portfolios WHERE user_id = ?', (user_id,))
+            row = c.fetchone()
+            conn.close()
+            if not row or not row[0]:
+                raise HTTPException(status_code=404, detail=MSG_NO_PORTFOLIO)
+            df = pd.DataFrame(json.loads(row[0]))
+            tickers = df.get('ticker', df.get('stock symbol', pd.Series())).dropna().unique().tolist()
+        articles = get_news(tickers)
+        return {"articles": articles}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"News fetch error: {e}")
+        raise HTTPException(status_code=500, detail=MSG_INTERNAL_ERROR)
 
 # In-memory cache for historical performance
 def get_historical_performance_db(user_id: int, days: int):
@@ -264,13 +281,59 @@ def historical_performance(days: int = 30, user_id: int = Depends(get_user_id_fr
         raise HTTPException(status_code=500, detail=MSG_INTERNAL_ERROR)
 
 @router.get("/api/risk")
-def risk_metrics(days: int = 30):
-    logging.debug(f"Received get-risk request for {days} days")
-    if not isinstance(days, int) or days < 1 or days > MAX_DAYS:
-        logging.warning(f"Invalid days parameter: {days}")
-        raise HTTPException(status_code=400, detail=f"Invalid 'days' parameter. Must be an integer between 1 and {MAX_DAYS}.")
-    logging.error(MSG_NO_PORTFOLIO)
-    raise HTTPException(status_code=404, detail=MSG_NO_PORTFOLIO)
+def risk_metrics(days: int = 30, user_id: int = Depends(get_user_id_from_token)):
+    if days < 1 or days > MAX_DAYS:
+        raise HTTPException(status_code=400, detail=f"'days' must be between 1 and {MAX_DAYS}.")
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+        c.execute('SELECT data, uploaded_at FROM portfolios WHERE user_id = ?', (user_id,))
+        row = c.fetchone()
+        conn.close()
+        if not row or not row[0]:
+            raise HTTPException(status_code=404, detail=MSG_NO_PORTFOLIO)
+        df = pd.DataFrame(json.loads(row[0]))
+        hist_data = get_historical_performance(df, days=days, upload_date=row[1] if len(row) > 1 else None)
+        return create_risk_profile(df, hist_data)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Risk metrics error: {e}")
+        raise HTTPException(status_code=500, detail=MSG_INTERNAL_ERROR)
+
+@router.get("/api/stock/{symbol}")
+def get_stock_detail(symbol: str, user_id: int = Depends(get_user_id_from_token)):
+    try:
+        ticker = symbol if symbol.endswith(".NS") else f"{symbol}.NS"
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+        c.execute('SELECT data FROM portfolios WHERE user_id = ?', (user_id,))
+        row = c.fetchone()
+        conn.close()
+        holding = None
+        if row and row[0]:
+            df = pd.DataFrame(json.loads(row[0]))
+            matched = df[df.get('ticker', df.get('stock symbol', pd.Series())).str.upper() == ticker.upper()]
+            if not matched.empty:
+                r = matched.iloc[0]
+                invested = r.get('quantity', 0) * r.get('average price', 0)
+                current_val = r.get('current_value', 0)
+                holding = {
+                    'quantity': float(r.get('quantity', 0)),
+                    'avg_price': float(r.get('average price', 0)),
+                    'current_price': float(r.get('current_price', r.get('live_price', 0))),
+                    'current_value': float(current_val),
+                    'gain_loss': float(current_val - invested),
+                    'gain_loss_percent': float(((current_val - invested) / invested * 100) if invested else 0),
+                    'sector': str(r.get('sector', '')),
+                }
+        news = get_news([ticker], max_per_ticker=5)
+        return {"symbol": symbol, "ticker": ticker, "holding": holding, "news": news}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Stock detail error for {symbol}: {e}")
+        raise HTTPException(status_code=500, detail=MSG_INTERNAL_ERROR)
 
 @router.post('/api/zerodha/exchange-token')
 async def exchange_token(request: Request):
