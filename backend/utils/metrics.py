@@ -5,6 +5,7 @@ from .normalization import normalize_columns, get_first_column
 import requests
 from .cagr import calculate_cagr
 from datetime import datetime, timedelta
+from backend.config import NSE_API_BASE
 
 def get_portfolio_metrics(df: pd.DataFrame) -> dict:
     """Calculate portfolio metrics for multiple timeframes (last year, month, week, day, today), including top performer, top loser, and CAGR. Uses only trading days returned by the Node.js API."""
@@ -38,7 +39,7 @@ def get_portfolio_metrics(df: pd.DataFrame) -> dict:
             used_date = end_date
             fallback = False
             try:
-                url = f'http://localhost:3000/api/equity/historical/{symbol}?dateStart={start_date}&dateEnd={end_date}'
+                url = f'{NSE_API_BASE}/equity/historical/{symbol}?dateStart={start_date}&dateEnd={end_date}'
                 resp = requests.get(url, timeout=10)
                 closes = []
                 if resp.status_code == 200:

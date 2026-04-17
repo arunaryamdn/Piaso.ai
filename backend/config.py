@@ -34,9 +34,13 @@ AI_RECO_REASON_NO_SIGNAL = "No strong buy/sell signal."
 # API constants
 import os as _os
 DB_PATH = _os.environ.get('DB_PATH', '/tmp/portfolios.db')
-JWT_SECRET = _os.environ.get('JWT_SECRET', 'changeme')  # Set via environment variable in production
-NODE_API_URL = 'http://localhost:3000/api/equity/'
-NODE_API_HISTORICAL_URL = 'http://localhost:3000/api/equity/historical/'
+JWT_SECRET = _os.environ.get('JWT_SECRET', 'changeme')
+
+_vercel_url = _os.environ.get('VERCEL_URL')
+NSE_API_BASE = _os.environ.get(
+    'NSE_API_URL',
+    f"https://{_vercel_url}/api/nse" if _vercel_url else "http://localhost:3000/api"
+)
 
 # Logging
 LOG_PREFIX = '[Paiso.ai Backend]' 
