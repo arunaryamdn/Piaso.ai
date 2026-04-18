@@ -1,11 +1,28 @@
-node_modules
+node_modules/
+.next/
+.venv/
+frontend_cra_backup/
+
 # Environment files
 .env.local
 .env*.local
 *.env
-frontend_cra_backup/
-.next/
-node_modules/
-.venv/
+
+# Python
 __pycache__/
 *.pyc
+*.pyo
+
+# SQLite databases (never commit data files)
+*.db
+*.sqlite
+*.sqlite3
+
+# Test data (may contain real financial data)
+backend/tests/*.xlsx
+backend/tests/*.pdf
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini

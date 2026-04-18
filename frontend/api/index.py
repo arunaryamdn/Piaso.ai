@@ -102,11 +102,5 @@ try:
 except Exception as e:
     logging.error(f"Could not load pulse routes: {e}")
 
-try:
-    from backend.tests.bug import router as bug_router
-    app.include_router(bug_router)
-except Exception:
-    pass
-
 # Mangum adapter — turns ASGI app into a Lambda/Vercel handler
 handler = Mangum(app, lifespan="off")

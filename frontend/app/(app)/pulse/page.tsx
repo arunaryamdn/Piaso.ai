@@ -21,7 +21,7 @@ function formatInr(n: number): string {
 
 export default async function PulsePage() {
   const session = await auth();
-  const token = (session as any)?.accessToken ?? "";
+  const token = (session as any)?.backendToken ?? "";
 
   let data: PulseData | null = null;
   try {
