@@ -6,3 +6,6 @@ node_modules
 frontend_cra_backup/
 .next/
 node_modules/
+.venv/
+__pycache__/
+*.pyc

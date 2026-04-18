@@ -3,11 +3,13 @@
 @tailwind utilities;
 
 :root {
-  --primary: #1B3A4B;
-  --primary-light: #2D5F73;
-  --primary-dark: #122831;
-  --brand-cyan: #00BAF2;
+  /* Brand: Deep Teal */
+  --primary:        #1B3A4B;
+  --primary-light:  #2D5F73;
+  --primary-dark:   #122831;
+  --brand-cyan:     #00BAF2;
 
+  /* Health / Traffic Light */
   --green-500: #059669; --green-600: #047857;
   --green-100: #D1FAE5; --green-50:  #ECFDF5;
   --amber-500: #D97706; --amber-600: #92400E;
@@ -17,9 +19,18 @@
   --grey-500:  #64748B; --grey-600:  #475569;
   --grey-100:  #E2E8F0; --grey-50:   #F1F5F9;
 
-  --gain: #059669; --gain-bg: #ECFDF5;
-  --loss: #DC2626; --loss-bg: #FEF2F2;
+  /* Investment deltas */
+  --gain:          #059669;
+  --gain-bg:       #ECFDF5;
+  --loss:          #DC2626;
+  --loss-bg:       #FEF2F2;
+  --neutral-delta: #64748B;
 
+  /* 8-color chart palette */
+  --chart-1: #1B3A4B; --chart-2: #059669; --chart-3: #D97706; --chart-4: #7C3AED;
+  --chart-5: #2563EB; --chart-6: #DC2626; --chart-7: #0891B2; --chart-8: #94A3B8;
+
+  /* Neutrals (warm ivory) */
   --ink-primary:   #1A1A2E;
   --ink-secondary: #4A5568;
   --ink-muted:     #94A3B8;
@@ -27,24 +38,61 @@
   --card-bg:       #FFFFFF;
   --border:        rgba(0,0,0,0.06);
 
+  /* Gold coin */
+  --gold:        #F5B800;
+  --gold-light:  #FFE066;
+  --gold-dark:   #CC8F00;
+  --gold-border: #B8860B;
+
+  /* Type scale */
+  --fs-micro:   9px;
+  --fs-meta:    11px;
+  --fs-body:    13px;
+  --fs-item:    14px;
+  --fs-section: 16px;
+  --fs-hero-s:  20px;
+  --fs-hero-m:  24px;
+  --fs-hero-l:  32px;
+  --fs-display: 48px;
+
+  /* Spacing (base 4px) */
   --sp-1: 4px;  --sp-2: 8px;   --sp-3: 12px; --sp-4: 16px;
   --sp-6: 24px; --sp-8: 32px;  --sp-12: 48px; --sp-16: 64px;
 
-  --r-sm: 6px; --r-md: 10px; --r-lg: 14px;
-  --r-xl: 20px; --r-full: 999px;
+  /* Radii */
+  --r-sm:   6px;
+  --r-md:   10px;
+  --r-lg:   14px;
+  --r-xl:   20px;
+  --r-full: 999px;
 
+  /* Shadows */
+  --shadow-xs:   0 1px 2px rgba(0,0,0,0.04);
+  --shadow-sm:   0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-card: 0 2px 12px rgba(0,0,0,0.06);
+  --shadow-md:   0 4px 20px rgba(0,0,0,0.08);
+  --shadow-lg:   0 12px 32px rgba(0,0,0,0.10);
+  --shadow-gold: 0 1px 3px rgba(184,134,11,0.4);
+
+  /* Motion */
   --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
-  --dur-micro: 150ms; --dur-short: 250ms;
-  --dur-medium: 450ms; --dur-long: 800ms;
+  --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-micro:   150ms;
+  --dur-short:   250ms;
+  --dur-medium:  450ms;
+  --dur-long:    800ms;
 }
 
 [data-theme="dark"] {
-  --primary: #5BA4C0;
-  --ink-primary: #F1F5F9;
+  --primary:       #5BA4C0;
+  --primary-light: #7BBDD6;
+  --primary-dark:  #1B3A4B;
+  --ink-primary:   #F1F5F9;
   --ink-secondary: #CBD5E1;
-  --page-bg: #0F172A;
-  --card-bg: #1E293B;
-  --border: rgba(255,255,255,0.08);
+  --ink-muted:     #64748B;
+  --page-bg:       #0F172A;
+  --card-bg:       #1E293B;
+  --border:        rgba(255,255,255,0.08);
   --green-50: #052E16; --green-100: #064E3B; --green-500: #34D399;
   --amber-50: #451A03; --amber-100: #78350F; --amber-500: #FBBF24;
   --red-50:   #450A0A; --red-100:   #7F1D1D; --red-500:   #F87171;
@@ -56,16 +104,20 @@
 body {
   background: var(--page-bg);
   color: var(--ink-primary);
-  font-family: var(--font-dm-sans), sans-serif;
+  font-family: var(--font-dm-sans), 'DM Sans', sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
+.font-display { font-family: var(--font-fraunces), 'Fraunces', Georgia, serif; }
 .tabular { font-variant-numeric: tabular-nums; }
 
 .bg-health-green { background: linear-gradient(135deg,#ECFDF5 0%,#D1FAE5 50%,#A7F3D0 100%); }
 .bg-health-amber { background: linear-gradient(135deg,#FFFBEB 0%,#FEF3C7 50%,#FDE68A 100%); }
 .bg-health-red   { background: linear-gradient(135deg,#FFF5F5 0%,#FEE2E2 50%,#FECACA 100%); }
 .bg-health-grey  { background: linear-gradient(135deg,#F8FAFC 0%,#F1F5F9 50%,#E2E8F0 100%); }
+
+.gain { color: var(--gain); }
+.loss { color: var(--loss); }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }

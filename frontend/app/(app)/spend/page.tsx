@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
+import { useSession } from "next-auth/react";
 import RunwayHero from "@/components/spend/RunwayHero";
 import TransactionList from "@/components/spend/TransactionList";
 import StatementUpload from "@/components/spend/StatementUpload";
@@ -25,17 +26,20 @@ interface Transaction {
 type Tab = "overview" | "transactions" | "upload";
 
 export default function SpendPage() {
+  const { data: session } = useSession();
   const [summary, setSummary] = useState<Summary | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [tab, setTab] = useState<Tab>("overview");
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
+    const token = (session as any)?.backendToken ?? "";
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
     setLoading(true);
     try {
       const [s, t] = await Promise.all([
-        fetch("/api/spend/summary").then((r) => r.json()),
-        fetch("/api/spend/transactions?limit=100").then((r) => r.json()),
+        fetch("/api/spend/summary", { headers }).then((r) => r.json()),
+        fetch("/api/spend/transactions?limit=100", { headers }).then((r) => r.json()),
       ]);
       setSummary(s);
       setTransactions(t.transactions ?? []);
@@ -46,7 +50,7 @@ export default function SpendPage() {
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { if (session) load(); }, [load, session]);
 
   if (loading) {
     return <div className="mt-8 text-center text-sm" style={{ color: "var(--ink-muted)" }}>Loading…</div>;

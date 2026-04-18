@@ -1,10 +1,7 @@
 {
   "private": true,
   "workspaces": [
-    "frontend",
-    "backend",
-    "stock-nse-india",
-    "kite-mcp-server"
+    "frontend"
   ],
   "dependencies": {
     "bcryptjs": "^3.0.2",

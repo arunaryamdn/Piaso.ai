@@ -1,35 +1,32 @@
+import Image from "next/image";
 import { signIn } from "@/auth";
 
 export default function LoginPage() {
   return (
-    <div
-      className="bg-white rounded-2xl shadow-sm border p-8 flex flex-col gap-6 items-center"
-      style={{ borderColor: "var(--border)" }}
-    >
-      <div className="text-center">
-        <h1
-          className="font-display font-bold text-2xl"
-          style={{ color: "var(--primary)" }}
-        >
-          Piaso.ai
+    <div style={{ background: "var(--card-bg)", borderRadius: "var(--r-xl)",
+      boxShadow: "var(--shadow-lg)", border: "1px solid var(--border)",
+      padding: "36px 28px", display: "flex", flexDirection: "column", alignItems: "center", gap: 24 }}>
+
+      <div style={{ textAlign: "center" }}>
+        <Image src="/logo.svg" alt="Piaso.ai" width={52} height={52} style={{ marginBottom: 12 }} />
+        <h1 style={{ fontFamily: "var(--font-fraunces), Fraunces, Georgia, serif", fontWeight: 700,
+          fontSize: 26, color: "var(--ink-primary)", margin: "0 0 6px", letterSpacing: -0.02 }}>
+          Welcome back
         </h1>
-        <p className="text-sm mt-1" style={{ color: "var(--ink-muted)" }}>
+        <p style={{ fontSize: 13, color: "var(--ink-muted)", margin: 0 }}>
           Your investments and spend, in one place.
         </p>
       </div>
 
-      <form
+      <form style={{ width: "100%" }}
         action={async () => {
           "use server";
           await signIn("google", { redirectTo: "/pulse" });
-        }}
-        className="w-full"
-      >
-        <button
-          type="submit"
-          className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl font-medium text-sm transition-colors"
-          style={{ background: "var(--primary)", color: "white" }}
-        >
+        }}>
+        <button type="submit" style={{ width: "100%", display: "flex", alignItems: "center",
+          justifyContent: "center", gap: 10, padding: "13px 20px", borderRadius: "var(--r-lg)",
+          background: "var(--primary)", color: "#fff", fontSize: 14, fontWeight: 600,
+          border: "none", cursor: "pointer", boxShadow: "var(--shadow-md)" }}>
           <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
             <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
@@ -40,7 +37,7 @@ export default function LoginPage() {
         </button>
       </form>
 
-      <p className="text-xs text-center" style={{ color: "var(--ink-muted)" }}>
+      <p style={{ fontSize: 11, color: "var(--ink-muted)", textAlign: "center", margin: 0 }}>
         By continuing, you agree to our Terms of Service.
       </p>
     </div>

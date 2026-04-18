@@ -1,13 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  experimental: {
-    serverActions: {
-      allowedOrigins: [
-        "localhost:3001",
-        process.env.NEXT_PUBLIC_APP_URL ?? "",
-      ].filter(Boolean) as string[],
-    },
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "lh3.googleusercontent.com" },
+      { protocol: "https", hostname: "*.googleusercontent.com" },
+    ],
   },
   async rewrites() {
     if (process.env.NODE_ENV === "development") {

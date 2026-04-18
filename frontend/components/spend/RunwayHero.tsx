@@ -23,24 +23,24 @@ export default function RunwayHero({ health, balance, runwayDays, pctSpent, days
         <HealthBadge state={health} label={label} />
       </div>
       <p className="font-display font-bold text-3xl tabular" style={{ color: "var(--ink-primary)" }}>
-        ₹{balance.toLocaleString("en-IN")} left
+        ₹{(balance ?? 0).toLocaleString("en-IN")} left
       </p>
       <p className="text-sm mt-1" style={{ color: "var(--ink-secondary)" }}>
-        {runwayDays} days of comfortable spending
+        {runwayDays ?? 0} days of comfortable spending
       </p>
       <div className="h-px my-3" style={{ background: "rgba(0,0,0,0.08)" }} />
       <div className="h-2 rounded-full mb-3" style={{ background: "var(--grey-100)" }}>
         <div
           className="h-2 rounded-full transition-all"
           style={{
-            width: `${Math.min(pctSpent, 100)}%`,
+            width: `${Math.min(pctSpent ?? 0, 100)}%`,
             background: health === "green" ? "var(--green-500)" : health === "amber" ? "var(--amber-500)" : "var(--red-500)",
           }}
         />
       </div>
       <div className="flex gap-2">
-        <FlipCard value={`Day ${daysElapsed}`} label="Cycle Day" />
-        <FlipCard value={`${pctSpent.toFixed(0)}%`} label="Spent" />
+        <FlipCard value={`Day ${daysElapsed ?? 0}`} label="Cycle Day" />
+        <FlipCard value={`${(pctSpent ?? 0).toFixed(0)}%`} label="Spent" />
       </div>
     </div>
   );

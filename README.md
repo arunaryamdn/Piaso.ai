@@ -1,332 +1,133 @@
-# Paiso.ai
+# Piaso.ai
 
-A modern, modular web application for analyzing Indian stock market portfolios. Built with a FastAPI backend, React frontend, and optional Streamlit UI for rapid prototyping.
+Personal wealth tracker for India. Tracks investments (Zerodha portfolio) and monthly spending (bank statements) in one mobile-first app.
 
-## Features
-- **Portfolio Analysis**: Real-time stock price tracking, profit/loss calculation, sector analysis, and risk metrics.
-- **Interactive Dashboard**: Summary cards, distribution charts, top performers/losers, and historical performance.
-- **AI-Powered Analytics**: Investment recommendations and portfolio insights.
-- **News Integration**: Latest news for your portfolio holdings.
-- **Excel Upload/Download**: Upload your portfolio in Excel format and export results.
+**Live:** Deployed on Vercel. Backend as Python serverless functions, frontend as Next.js 16.
 
-## Architecture
-- **Backend**: FastAPI (`backend/`)
-  - All business logic and analytics in `backend/utils/`
-  - Clean REST endpoints for all analytics features
-- **Frontend**: React (`frontend/`)
-  - Modern UI with charts (Recharts), tables, and cards
-  - Calls backend endpoints for all analytics
-- **Streamlit UI**: (`backend/ui/`)
-  - Thin UI layer for rapid prototyping, now fully modularized
+---
 
-## Quick Start
+## Quick start (local dev)
 
-### 1. Backend (FastAPI)
-```pwsh
-cd backend
-python -m venv .venv
-.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-uvicorn main:app --reload
-```
+### Prerequisites
+- Node.js 20+, Python 3.11+
+- WSL2 (Windows) or macOS/Linux
+- A Google OAuth app (for sign-in)
+- Neon Postgres database (or leave empty to use SQLite locally)
 
-### 2. Frontend (React)
-```pwsh
-cd ../frontend
+### 1. Clone and install frontend
+```bash
+cd frontend
 npm install
-npm start
 ```
 
-### 3. (Optional) Streamlit UI
-```pwsh
-cd ../backend
-streamlit run main.py
+### 2. Set up Python virtualenv
+```bash
+cd frontend
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r api/requirements.txt
 ```
 
-## Portfolio Excel Format
-Your Excel file should have at least these columns:
-- `Stock` or `Ticker`: Stock symbol (e.g., RELIANCE, TCS)
-- `Quantity`: Number of shares
-- `Avg_Price`: Average purchase price
+### 3. Configure environment
+Create `frontend/.env.local`:
+```
+AUTH_SECRET=any-random-32-char-string
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+NEXTAUTH_URL=http://localhost:3001
+NEXT_PUBLIC_APP_URL=http://localhost:3001
+JWT_SECRET=changeme
+# Leave POSTGRES_URL empty to use SQLite locally
+# POSTGRES_URL=postgresql://...
+```
 
-Optional columns:
-- `Buy_Date`, `Alert_Price`, `Sector`, etc.
+### 4. Run both servers
 
-## API Endpoints (Updated)
+**Terminal 1 — FastAPI backend (port 5000):**
+```bash
+cd frontend && source .venv/bin/activate
+uvicorn api.index:app --reload --port 5000
+```
 
-| Endpoint                      | Method | Description                                 |
-|-------------------------------|--------|---------------------------------------------|
-| /api/upload-portfolio         | POST   | Upload portfolio Excel file                 |
-| /api/portfolio                | GET    | Get current portfolio                       |
-| /api/portfolio                | DELETE | Delete current portfolio                    |
-| /api/portfolio/status         | GET    | Get portfolio status                        |
-| /api/dashboard/analytics      | GET    | Get dashboard analytics                     |
-| /api/portfolio_table          | POST   | Get portfolio table with analytics          |
-| /api/historical               | GET    | Get historical performance                  |
-| /api/profile                  | GET    | Get user profile info                       |
-| /api/zerodha/exchange-token   | POST   | Exchange token for Zerodha integration      |
-| /api/mcp-chat                 | POST   | MCP chat (manual/testing only)              |
-| /api/news                     | GET    | (stub, always returns 404, to be removed)   |
-| /api/risk                     | GET    | (stub, always returns 404, to be removed)   |
+**Terminal 2 — Next.js frontend (port 3001):**
+```bash
+cd frontend && npm run dev
+```
 
-### Portfolio Management
-- `POST /api/upload-portfolio`  
-  Upload an Excel file.  
-  **Request:** `multipart/form-data` with `file`  
-  **Response:**
-  ```json
-  {
-    "preview": [{ "Stock": "TCS", "Quantity": 5, ... }],
-    "message": "Upload successful! Ready to analyze."
-  }
-  ```
-- `GET /api/portfolio`  
-  Get the current user's portfolio.  
-  **Response:**
-  ```json
-  [
-    { "ticker": "TCS", "quantity": 5, "average price": 3500, ... }
-  ]
-  ```
-- `DELETE /api/portfolio`  
-  Delete the current user's portfolio.
-- `GET /api/portfolio/status`  
-  Get the status of the user's portfolio (ready, processing, failed, not_found).
-
-### Analytics & Dashboard
-- `GET /api/dashboard/analytics`  
-  Get all dashboard analytics (metrics, sector, historical, holdings, news).
-- `POST /api/portfolio_table`  
-  Get a table of portfolio holdings with live prices and analytics.
-- `GET /api/historical?days=30`  
-  Get historical performance for the portfolio.
-
-### User Profile
-- `GET /api/profile`  
-  Get user profile info + portfolio file info.
-
-### Broker Integration
-- `POST /api/zerodha/exchange-token`  
-  Exchange a request token for a Zerodha session (for integration).
-
-### (Optional/Advanced)
-- `POST /api/mcp-chat`  
-  MCP chat integration (for manual/testing, not used by frontend).
-
-### Endpoints to Remove Soon
-- `GET /api/news` — (stub, always returns 404)
-- `GET /api/risk` — (stub, always returns 404)
-
-## Development Notes
-- All business logic is in backend utility modules for maintainability.
-- The React frontend is fully decoupled and communicates via REST API.
-- Streamlit UI is now a thin client, calling backend endpoints only.
-
-## Contributing
-Pull requests and issues are welcome!
-
-## License
-MIT License
+Open `http://localhost:3001`.
 
 ---
 
-# Comprehensive Documentation (for PDF Export)
-
-## Overview
-
-**Paiso.ai** is a modern, modular web application for analyzing Indian stock market portfolios. It features a FastAPI backend, a React frontend, and an optional Streamlit UI for rapid prototyping. The platform provides real-time analytics, beautiful dashboards, and robust error handling.
-
----
-
-## Features
-
-- **Portfolio Analysis:** Real-time stock price tracking, profit/loss calculation, sector analysis, and risk metrics.
-- **Interactive Dashboard:** Summary cards, distribution charts, top performers/losers, and historical performance.
-- **AI-Powered Analytics:** Investment recommendations and portfolio insights.
-- **News Integration:** Latest news for your portfolio holdings.
-- **Excel Upload/Download:** Upload your portfolio in Excel format and export results.
-- **Authentication:** JWT-based user authentication.
-- **Responsive UI:** Modern, animated, and mobile-friendly dashboard.
-
----
-
-## Architecture
+## Project structure
 
 ```
-Paiso.ai/
-├── backend/         # FastAPI backend (REST API, analytics, DB)
-│   ├── main.py
+Piaso.ai/
+├── backend/                    # Python business logic
+│   ├── api/
+│   │   ├── routes_portfolio.py # Portfolio upload, analytics, Zerodha
+│   │   ├── routes_spend.py     # Bank statement parsing, spend summary
+│   │   ├── routes_nse.py       # NSE equity quotes via yfinance
+│   │   └── routes_pulse.py     # Combined net worth + spend overview
 │   ├── utils/
-│   ├── src/
-│   └── ...
-├── frontend/        # React frontend (dashboard, auth, charts)
-│   ├── src/
-│   └── ...
-├── kite-mcp-server/ # Go-based MCP server for broker integration (optional)
-├── Designs/         # Design assets and mockups
-└── ...
+│   │   ├── db.py               # Postgres/SQLite abstraction
+│   │   ├── nse_client.py       # yfinance .NS wrapper
+│   │   ├── prices.py           # Live price fetcher
+│   │   └── statement_parser.py # PDF + Excel bank statement parser
+│   └── config.py               # Constants, env vars
+├── frontend/                   # Next.js 16 app (Vercel Root Directory)
+│   ├── app/
+│   │   ├── page.tsx            # Landing page (unauthenticated)
+│   │   ├── (auth)/login/       # Google sign-in
+│   │   └── (app)/              # Authenticated shell
+│   │       ├── pulse/          # Net worth + spend overview
+│   │       ├── invest/         # Portfolio analytics + upload
+│   │       ├── spend/          # Spend summary + statement upload
+│   │       ├── ai/             # AI buy/hold/sell recommendations
+│   │       ├── news/           # NSE news for holdings
+│   │       └── profile/        # User profile, portfolio management
+│   ├── components/             # React components
+│   ├── api/
+│   │   ├── index.py            # Vercel serverless entry (Mangum adapter)
+│   │   └── requirements.txt    # Python deps for Vercel
+│   ├── auth.ts                 # Auth.js v5 + Google OAuth + pg adapter
+│   └── proxy.ts                # Next.js 16 route protection
+└── docs/                       # PRD, Architecture, Design docs
 ```
 
 ---
 
-## Quick Start
+## Deployment (Vercel)
 
-### 1. Backend (FastAPI)
+Set **Root Directory** to `frontend` in Vercel project settings.
 
-```sh
-cd backend
-python -m venv .venv
-.venv\Scripts\Activate.ps1  # On Windows
-pip install -r requirements.txt
-uvicorn main:app --reload
+**Required env vars:**
+```
+AUTH_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
+NEXTAUTH_URL, NEXT_PUBLIC_APP_URL
+JWT_SECRET, POSTGRES_URL
 ```
 
-### 2. Frontend (React)
+**One-time Neon Postgres migrations:**
+```sql
+CREATE TABLE IF NOT EXISTS transactions (
+  id SERIAL PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  date DATE,
+  description TEXT,
+  amount NUMERIC,
+  transaction_type TEXT,
+  category TEXT,
+  confidence TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
 
-```sh
-cd ../frontend
-npm install
-npm start
+CREATE TABLE IF NOT EXISTS salary_cycles (
+  id SERIAL PRIMARY KEY,
+  user_id TEXT NOT NULL UNIQUE,
+  salary_amount NUMERIC,
+  salary_day INTEGER DEFAULT 1,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
 ```
 
-### 3. (Optional) Streamlit UI
-
-```sh
-cd ../backend
-streamlit run main.py
-```
-
----
-
-## Portfolio Excel Format
-
-Your Excel file should have at least these columns:
-
-| Column         | Example Value   | Description                        |
-|----------------|----------------|------------------------------------|
-| Stock / Ticker | RELIANCE       | Stock symbol (NSE)                 |
-| Quantity       | 10             | Number of shares                   |
-| Avg_Price      | 2500           | Average purchase price             |
-| Buy_Date       | 2023-01-01     | (Optional) Date of purchase        |
-| Sector         | ENERGY         | (Optional) Sector name             |
-
-**Sample:**
-
-| Stock   | Quantity | Avg_Price | Buy_Date   | Sector  |
-|---------|----------|-----------|------------|---------|
-| TCS     | 5        | 3500      | 2022-10-01 | IT      |
-| RELIANCE| 10       | 2500      | 2021-05-15 | ENERGY  |
-
----
-
-## Testing Your Endpoints
-- Use FastAPI's `/docs` (Swagger UI) at `http://localhost:8000/docs` to interactively test all endpoints.
-- Use Postman or curl for manual testing.
-- Make sure to include the `Authorization: Bearer <token>` header for protected endpoints.
-
----
-
-## Example: Fetching Sector Allocation
-
-**Request:**
-```http
-POST /api/sector_analysis
-Authorization: Bearer <JWT>
-Content-Type: application/json
-
-{}
-```
-
-**Response:**
-```json
-[
-  { "Sector": "IT", "Current_Value": 50000 },
-  { "Sector": "ENERGY", "Current_Value": 25000 }
-]
-```
-
----
-
-## Example: Handling Errors
-
-If the user has not uploaded a portfolio:
-
-**Response:**
-```json
-{
-  "detail": "No portfolio uploaded"
-}
-```
-**Frontend:**  
-Shows a red error message and a prompt to upload a portfolio.
-
----
-
-## Example: Uploading a Portfolio
-
-**Request:**  
-`POST /api/upload-portfolio` (multipart/form-data, with Excel file)
-
-**Response:**
-```json
-{
-  "preview": [
-    { "Stock": "TCS", "Quantity": 5, "Avg_Price": 3500, ... }
-  ],
-  "message": "Upload successful! Ready to analyze."
-}
-```
-
----
-
-## Example: Dashboard Card Data
-
-**Request:**  
-`GET /api/portfolio/metrics-history`
-
-**Response:**
-```json
-{
-  "total_value": { "last_year": 100000, "last_month": 98000, ... },
-  "profit_loss": { "last_year": 15000, ... },
-  "change_percent": { "last_year": 15, ... },
-  "top_performer": { "last_year": { "name": "TCS", "percent": 22.5 }, ... },
-  "top_loser": { "last_year": { "name": "XYZ", "percent": -10.2 }, ... },
-  "cagr": { "last_year": 12.3, ... },
-  "invested_amount": 85000
-}
-```
-
----
-
-## Error Handling
-
-- All endpoints return clear error messages if the portfolio is missing or invalid.
-- The frontend displays these errors with user-friendly messages and consistent loaders.
-
----
-
-## Contributing
-
-- All business logic is in backend utility modules for maintainability.
-- The React frontend is fully decoupled and communicates via REST API.
-- Pull requests and issues are welcome!
-
----
-
-## License
-
-MIT License
-
----
-
-## Further Expansion
-
-- **Multi-portfolio support**
-- **Advanced AI analytics**
-- **Broker integration (Zerodha, etc.)**
-- **Mobile app**
-
----
-
-**For any questions or contributions, please open an issue or pull request on GitHub!**
+Auth.js auto-creates its own tables on first run via `@auth/pg-adapter`.

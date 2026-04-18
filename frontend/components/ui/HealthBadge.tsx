@@ -8,7 +8,7 @@ const colors: Record<HealthState, { bg: string; text: string }> = {
 };
 
 export default function HealthBadge({ state, label }: { state: HealthState; label: string }) {
-  const c = colors[state];
+  const c = colors[state] ?? colors.grey;
   return (
     <span
       className="text-[9px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full"

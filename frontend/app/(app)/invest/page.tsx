@@ -26,7 +26,7 @@ interface DashboardData {
 
 export default async function InvestPage() {
   const session = await auth();
-  const token = (session as any)?.accessToken ?? "";
+  const token = session?.backendToken ?? "";
 
   let data: DashboardData | null = null;
   let error: string | null = null;
@@ -34,7 +34,11 @@ export default async function InvestPage() {
   try {
     data = await apiFetch<DashboardData>("/api/dashboard/analytics", token);
   } catch (e: any) {
-    error = e.message;
+    if (e.message?.includes("404")) {
+      data = { portfolio_status: "not_found" } as any;
+    } else {
+      error = e.message;
+    }
   }
 
   if (data?.portfolio_status === "not_found") {
