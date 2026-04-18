@@ -1,7 +1,6 @@
 {
   "version": 2,
   "buildCommand": "DISABLE_ESLINT_PLUGIN=true npm run build",
-  "outputDirectory": "build",
   "rewrites": [
     { "source": "/api/:path*", "destination": "/api/index" }
   ],
@@ -9,8 +8,6 @@
     "DB_PATH": "/tmp/portfolios.db",
     "AUTH_DB_PATH": "/tmp/users.db",
     "JWT_SECRET": "changeme",
-    "JWT_REFRESH_SECRET": "refresh_secret",
-    "REACT_APP_API_URL": "",
-    "REACT_APP_AUTH_URL": ""
+    "JWT_REFRESH_SECRET": "refresh_secret"
   }
 }
