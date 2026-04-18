@@ -96,6 +96,13 @@ except Exception as e:
     logging.error(f"Could not load spend routes: {e}")
 
 try:
+    from backend.api.routes_pulse import router as pulse_router
+    app.include_router(pulse_router)
+    logging.info("Pulse routes loaded.")
+except Exception as e:
+    logging.error(f"Could not load pulse routes: {e}")
+
+try:
     from backend.tests.bug import router as bug_router
     app.include_router(bug_router)
 except Exception:

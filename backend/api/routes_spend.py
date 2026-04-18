@@ -73,7 +73,8 @@ async def list_transactions(
 
 
 @router.get("/summary")
-async def spend_summary(user_id: str = Depends(get_user_id_from_token)):
+async def get_spend_summary_data(user_id: str) -> dict:
+    """Core spend summary logic — callable directly or via route handler."""
     cycles = fetchall(None, "SELECT * FROM salary_cycles WHERE user_id = ?", (user_id,))
     config = cycles[0] if cycles else {"salary_amount": 0, "salary_day": 1}
 
@@ -121,6 +122,10 @@ async def spend_summary(user_id: str = Depends(get_user_id_from_token)):
         "days_elapsed": days_elapsed,
         "days_remaining": days_remaining,
     }
+
+
+async def spend_summary(user_id: str = Depends(get_user_id_from_token)):
+    return await get_spend_summary_data(user_id)
 
 
 @router.post("/salary-cycle")
