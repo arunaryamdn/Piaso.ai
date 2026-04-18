@@ -1,12 +1,11 @@
 import pandas as pd
-import requests
 import logging
 from .normalization import normalize_columns
 import httpx
 import asyncio
 
 def fetch_realtime_prices_async(df: pd.DataFrame) -> pd.DataFrame:
-    """Sync: Fetch real-time prices for each ticker in the DataFrame using Node.js API."""
+    """Sync: Fetch real-time prices for each ticker in the DataFrame using yfinance."""
     logging.debug(f"[DEBUG] Input DataFrame tickers: {df['ticker'].tolist() if 'ticker' in df.columns else 'No ticker col'}")
     df = df.copy()
     df = normalize_columns(df)
@@ -17,21 +16,17 @@ def fetch_realtime_prices_async(df: pd.DataFrame) -> pd.DataFrame:
     tickers = df['ticker'].astype(str).str.strip().str.upper().unique() if 'ticker' in df.columns else []
     prices = []
     def fetch_price(ticker):
-        url = f"http://localhost:3000/api/equity/{ticker}"
-        logging.debug(f"[DEBUG] Fetching price for ticker: {ticker} from {url}")
+        logging.debug(f"[DEBUG] Fetching price for ticker: {ticker} via yfinance")
         try:
-            resp = requests.get(url, timeout=5)
-            if resp.status_code == 200:
-                data = resp.json()
-                price = data.get('priceInfo', {}).get('lastPrice', 0)
-                logging.debug(f"[DEBUG] Got price for {ticker}: {price}")
-                return {'ticker': ticker, 'live_price': price, 'status': 'ok', 'source': 'node', 'error': ''}
+            from backend.utils.nse_client import get_equity_quote
+            data = get_equity_quote(ticker)
+            if data:
+                return {'ticker': ticker, 'live_price': data['lastPrice'], 'status': 'ok', 'source': 'yfinance', 'error': ''}
             else:
-                logging.warning(f"[DEBUG] Failed to fetch price for {ticker}: {resp.status_code}")
-                return {'ticker': ticker, 'live_price': 0, 'status': 'fail', 'source': 'node', 'error': f'status {resp.status_code}'}
+                return {'ticker': ticker, 'live_price': 0, 'status': 'fail', 'source': 'yfinance', 'error': 'not found'}
         except Exception as e:
             logging.error(f"[DEBUG] Exception fetching price for {ticker}: {e}")
-            return {'ticker': ticker, 'live_price': 0, 'status': 'fail', 'source': 'node', 'error': str(e)}
+            return {'ticker': ticker, 'live_price': 0, 'status': 'fail', 'source': 'yfinance', 'error': str(e)}
     prices = [fetch_price(ticker) for ticker in tickers]
     prices_df = pd.DataFrame(prices)
     logging.debug(f"[DEBUG] Prices DataFrame:\n{prices_df}")
@@ -47,7 +42,7 @@ def fetch_realtime_prices_async(df: pd.DataFrame) -> pd.DataFrame:
 # Keep the sync version for backward compatibility
 
 def fetch_realtime_prices(df: pd.DataFrame) -> pd.DataFrame:
-    """Fetch real-time prices for each ticker in the DataFrame using Node.js API (sync)."""
+    """Fetch real-time prices for each ticker in the DataFrame using yfinance (sync)."""
     logging.debug(f"[DEBUG] Input DataFrame tickers: {df['ticker'].tolist() if 'ticker' in df.columns else 'No ticker col'}")
     df = df.copy()
     # Normalize column names: lowercase and strip spaces
@@ -60,22 +55,19 @@ def fetch_realtime_prices(df: pd.DataFrame) -> pd.DataFrame:
     logging.debug(f"[DEBUG] Normalized tickers: {tickers}")
     prices = []
     for ticker in tickers:
-        url = f"http://localhost:3000/api/equity/{ticker}"
-        logging.debug(f"[DEBUG] Fetching price for ticker: {ticker} from {url}")
+        logging.debug(f"[DEBUG] Fetching price for ticker: {ticker} via yfinance")
         try:
-            resp = requests.get(url, timeout=5)
-            logging.debug(f"[DEBUG] Response status for {ticker}: {resp.status_code}")
-            if resp.status_code == 200:
-                data = resp.json()
-                price = data.get('priceInfo', {}).get('lastPrice', 0)
-                logging.debug(f"[DEBUG] Got price for {ticker}: {price}")
-                prices.append({'ticker': ticker, 'live_price': price, 'status': 'ok', 'source': 'node', 'error': ''})
+            from backend.utils.nse_client import get_equity_quote
+            data = get_equity_quote(ticker)
+            if data:
+                logging.debug(f"[DEBUG] Got price for {ticker}: {data['lastPrice']}")
+                prices.append({'ticker': ticker, 'live_price': data['lastPrice'], 'status': 'ok', 'source': 'yfinance', 'error': ''})
             else:
-                logging.warning(f"[DEBUG] Failed to fetch price for {ticker}: {resp.status_code}")
-                prices.append({'ticker': ticker, 'live_price': 0, 'status': 'fail', 'source': 'node', 'error': f'status {resp.status_code}'})
+                logging.warning(f"[DEBUG] Symbol not found for {ticker}")
+                prices.append({'ticker': ticker, 'live_price': 0, 'status': 'fail', 'source': 'yfinance', 'error': 'not found'})
         except Exception as e:
             logging.error(f"[DEBUG] Exception fetching price for {ticker}: {e}")
-            prices.append({'ticker': ticker, 'live_price': 0, 'status': 'fail', 'source': 'node', 'error': str(e)})
+            prices.append({'ticker': ticker, 'live_price': 0, 'status': 'fail', 'source': 'yfinance', 'error': str(e)})
     prices_df = pd.DataFrame(prices)
     logging.debug(f"[DEBUG] Prices DataFrame:\n{prices_df}")
     # Merge prices back to original df

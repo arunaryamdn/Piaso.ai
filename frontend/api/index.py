@@ -82,6 +82,13 @@ except Exception as e:
     logging.error(f"Could not load portfolio routes: {e}")
 
 try:
+    from backend.api.routes_nse import router as nse_router
+    app.include_router(nse_router)
+    logging.info("NSE routes loaded successfully.")
+except Exception as e:
+    logging.error(f"Could not load NSE routes: {e}")
+
+try:
     from backend.tests.bug import router as bug_router
     app.include_router(bug_router)
 except Exception:
