@@ -1,3 +1,4 @@
+// Requires: AUTH_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, POSTGRES_URL in env
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import PostgresAdapter from "@auth/pg-adapter";

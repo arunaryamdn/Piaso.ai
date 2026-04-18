@@ -2,7 +2,12 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   experimental: {
-    serverActions: { allowedOrigins: ["localhost:3001"] },
+    serverActions: {
+      allowedOrigins: [
+        "localhost:3001",
+        process.env.NEXT_PUBLIC_APP_URL ?? "",
+      ].filter(Boolean) as string[],
+    },
   },
   async rewrites() {
     if (process.env.NODE_ENV === "development") {
