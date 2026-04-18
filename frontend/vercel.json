@@ -6,8 +6,6 @@
   ],
   "env": {
     "DB_PATH": "/tmp/portfolios.db",
-    "AUTH_DB_PATH": "/tmp/users.db",
-    "JWT_SECRET": "changeme",
-    "JWT_REFRESH_SECRET": "refresh_secret"
+    "AUTH_DB_PATH": "/tmp/users.db"
   }
 }
