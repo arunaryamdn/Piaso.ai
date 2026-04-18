@@ -1,1 +1,8 @@
 node_modules
+# Environment files
+.env.local
+.env*.local
+*.env
+frontend_cra_backup/
+.next/
+node_modules/
