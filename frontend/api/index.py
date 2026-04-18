@@ -89,6 +89,13 @@ except Exception as e:
     logging.error(f"Could not load NSE routes: {e}")
 
 try:
+    from backend.api.routes_spend import router as spend_router
+    app.include_router(spend_router)
+    logging.info("Spend routes loaded.")
+except Exception as e:
+    logging.error(f"Could not load spend routes: {e}")
+
+try:
     from backend.tests.bug import router as bug_router
     app.include_router(bug_router)
 except Exception:
